@@ -1,6 +1,6 @@
 pub mod dsl;
 
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, arg};
 
 #[derive(Parser)]
 #[command(name = "catalyst")]
@@ -17,6 +17,9 @@ pub enum Commands {
         #[arg(short = 'f', long, help = "Filter by test name")]
         filter: Option<String>,
 
+        #[arg(long, default_value = "false", help = "Disable colored output")]
+        disable_color: bool,
+
         #[arg(short = 'v', long, help = "Enable verbose output")]
         verbose: bool,
     },
@@ -32,9 +35,13 @@ pub enum Commands {
 /// Execute the selected command
 pub fn run(opts: Opts) {
     match opts.command {
-        Commands::Run { filter, verbose } => {
+        Commands::Run {
+            filter,
+            disable_color,
+            verbose,
+        } => {
             println!("Running API tests...");
-            let mut runner = dsl::runner::TestRunner::new();
+            let mut runner = dsl::runner::TestRunner::new(disable_color);
             tokio::runtime::Runtime::new()
                 .unwrap()
                 .block_on(runner.execute_tests(filter, verbose));

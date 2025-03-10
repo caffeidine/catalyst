@@ -21,6 +21,7 @@ pub struct Test {
     pub expected_body: Option<serde_json::Value>,
     pub expected_headers: Option<Vec<(String, String)>>,
     pub store: Option<HashMap<String, String>>,
+    pub get_cookie: Option<HashMap<String, String>>,
 }
 
 #[derive(Debug, Deserialize)]
