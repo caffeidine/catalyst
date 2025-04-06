@@ -47,7 +47,11 @@
 //! catalyst validate
 //! ```
 
-pub mod dsl;
+pub mod core;
+pub mod http;
+pub mod models;
+pub mod parser;
+pub mod utils;
 
 use clap::{Parser, Subcommand, arg};
 
@@ -90,18 +94,18 @@ pub fn run(opts: Opts) {
             verbose,
         } => {
             println!("Running API tests...");
-            let mut runner = dsl::runner::TestRunner::new(disable_color);
+            let mut runner = core::runner::TestRunner::new(disable_color);
             tokio::runtime::Runtime::new()
                 .unwrap()
                 .block_on(runner.execute_tests(filter, verbose));
         }
         Commands::Validate => {
             println!("Validating tests configuration...");
-            dsl::validator::validate();
+            core::validator::validate();
         }
         Commands::List { verbose } => {
             println!("Listing available tests...");
-            dsl::parser::list_tests(verbose);
+            parser::list_tests(verbose);
         }
     }
 }

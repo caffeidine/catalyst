@@ -1,4 +1,4 @@
-use crate::dsl::parser::parse_tests;
+use crate::parser::parse_tests;
 
 pub fn validate() {
     match parse_tests() {
@@ -22,7 +22,7 @@ pub fn validate() {
                 if test.endpoint.is_empty() {
                     println!("Error: Test `{}` is missing an endpoint.", test.name);
                 }
-                if !["GET", "POST", "PUT", "DELETE"].contains(&test.method.as_str()) {
+                if !["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"].contains(&test.method.to_uppercase().as_str()) {
                     println!(
                         "Error: Test `{}` has an invalid HTTP method `{}`.",
                         test.name, test.method
