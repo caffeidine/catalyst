@@ -25,6 +25,7 @@ jobs:
         run: |
           cd docs/
           mdbook build
+          cp ./CNAME book/CNAME
           git worktree add gh-pages
           git config user.name "Deploy from CI"
           git config user.email ""
