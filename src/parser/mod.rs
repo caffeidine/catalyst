@@ -1,4 +1,4 @@
-use crate::dsl::models::TestSuite;
+use crate::models::TestSuite;
 use std::fs;
 use toml;
 
