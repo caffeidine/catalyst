@@ -68,7 +68,9 @@ pub async fn process_response(
     // Validate body if expected_body is specified (backward compatibility)
     if success && test.expected_body.is_some() {
         let expected = test.expected_body.as_ref().unwrap();
-        if !body_matches(expected, &body) {
+        // Replace variables in expected_body
+        let processed_expected = replace_variables_in_json(expected, variables);
+        if !body_matches(&processed_expected, &body) {
             println!(
                 "Test '{}' failed: Response body does not match expected body",
                 test.name
@@ -80,10 +82,12 @@ pub async fn process_response(
     // Validate advanced assertions if specified
     if success && test.assertions.is_some() {
         for assertion in test.assertions.as_ref().unwrap() {
-            if !validate_assertion(assertion, &body) {
+            // Process assertion with variables
+            let processed_assertion = process_assertion_with_variables(assertion, variables);
+            if !validate_assertion(&processed_assertion, &body) {
                 println!(
                     "Test '{}' failed: Assertion failed: {:?}",
-                    test.name, assertion
+                    test.name, processed_assertion
                 );
                 success = false;
                 break;
@@ -117,6 +121,76 @@ pub async fn process_response(
     variables.insert("response_time_ms".to_string(), response_time_ms.to_string());
 
     (success, expected_status, status, Some(body), headers_map)
+}
+
+/// Function to replace variables in a JSON value
+pub fn replace_variables_in_json(json: &Value, variables: &HashMap<String, String>) -> Value {
+    match json {
+        Value::String(s) => {
+            // Replace variables in string values
+            let mut result = s.clone();
+            for (key, value) in variables {
+                let pattern = format!("{{{{{}}}}}", key);
+                result = result.replace(&pattern, value);
+            }
+            Value::String(result)
+        }
+        Value::Object(map) => {
+            // Process each key-value pair in the object
+            let mut new_map = serde_json::Map::new();
+            for (k, v) in map {
+                new_map.insert(k.clone(), replace_variables_in_json(v, variables));
+            }
+            Value::Object(new_map)
+        }
+        Value::Array(arr) => {
+            // Process each element in the array
+            let new_arr: Vec<Value> = arr
+                .iter()
+                .map(|v| replace_variables_in_json(v, variables))
+                .collect();
+            Value::Array(new_arr)
+        }
+        // Other JSON types (numbers, booleans, null) don't contain variables
+        _ => json.clone(),
+    }
+}
+
+/// Function to process an assertion with variables
+pub fn process_assertion_with_variables(
+    assertion: &JsonAssertion,
+    variables: &HashMap<String, String>,
+) -> JsonAssertion {
+    match assertion {
+        JsonAssertion::Exact(value) => {
+            JsonAssertion::Exact(replace_variables_in_json(value, variables))
+        }
+        JsonAssertion::Contains(value) => {
+            JsonAssertion::Contains(replace_variables_in_json(value, variables))
+        }
+        JsonAssertion::Regex(pattern) => {
+            // Replace variables in the regex pattern
+            let mut processed_pattern = pattern.clone();
+            for (key, value) in variables {
+                let var_pattern = format!("{{{{{}}}}}", key);
+                processed_pattern = processed_pattern.replace(&var_pattern, value);
+            }
+            JsonAssertion::Regex(processed_pattern)
+        }
+        JsonAssertion::PathRegex(path, pattern) => {
+            // Replace variables in both the path and pattern
+            let mut processed_path = path.clone();
+            let mut processed_pattern = pattern.clone();
+
+            for (key, value) in variables {
+                let var_pattern = format!("{{{{{}}}}}", key);
+                processed_path = processed_path.replace(&var_pattern, value);
+                processed_pattern = processed_pattern.replace(&var_pattern, value);
+            }
+
+            JsonAssertion::PathRegex(processed_path, processed_pattern)
+        }
+    }
 }
 
 /// Function to check if a body matches an expected value (exact match for backward compatibility)

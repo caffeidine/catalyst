@@ -163,7 +163,6 @@ mod tests {
 
     #[test]
     fn test_validate_assertion_regex() {
-        // Utiliser une regex simple qui correspond à un élément spécifique
         let assertion = JsonAssertion::Regex(r#".*"success":true.*"#.to_string());
         let actual = json!({
             "success": true,

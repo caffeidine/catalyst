@@ -161,6 +161,46 @@ assertions = [
 ]
 ```
 
+## Using Variables in Assertions and Expected Body
+
+As of v0.2, Catalyst supports using variables in both `expected_body` and `assertions`, allowing for more dynamic and powerful tests.
+
+```toml
+# Test 1: Create a user and store the ID
+[[tests]]
+name = "Create User"
+method = "POST"
+endpoint = "/users"
+body = { "name" = "John Doe", "email" = "john@example.com" }
+expected_status = 201
+store = { "$.id" = "user_id" }
+
+# Test 2: Verify the user details with the stored ID
+[[tests]]
+name = "Get User Details"
+method = "GET"
+endpoint = "/users/{{user_id}}"
+expected_status = 200
+# Use the stored ID in expected_body
+expected_body = {
+  "id" = "{{user_id}}",  # Variable in expected_body
+  "name" = "John Doe"
+}
+
+# Test 3: Alternative using assertions
+[[tests]]
+name = "Verify User with Assertions"
+method = "GET"
+endpoint = "/users/{{user_id}}"
+expected_status = 200
+assertions = [
+  # Use variable in Contains assertion
+  { type = "Contains", value = { "id" = "{{user_id}}" } },
+  # Use variable in PathRegex assertion
+  { type = "PathRegex", value = ["$.id", "^{{user_id}}$"] }
+]
+```
+
 ## Variable Storage and Usage
 
 ### Storing Variables

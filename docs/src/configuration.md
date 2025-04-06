@@ -89,7 +89,7 @@ assertions = [
 
 ## Advanced Assertions
 
-Catalyst 0.2.1 introduces advanced assertions for more flexible response validation. You can use the `assertions` field to define multiple validation rules for a single test.
+Catalyst 0.2 introduces advanced assertions for more flexible response validation. You can use the `assertions` field to define multiple validation rules for a single test.
 
 ### Types of Assertions
 
@@ -152,7 +152,7 @@ This test will pass only if both assertions are satisfied.
 
 ## Response Time Validation
 
-Catalyst 0.2.1 introduces response time validation and tracking. This feature allows you to:
+Catalyst 0.2 introduces response time validation and tracking. This feature allows you to:
 
 1. Set maximum allowed response times for your API endpoints
 2. Access and use the measured response times in subsequent tests
