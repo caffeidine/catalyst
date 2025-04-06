@@ -95,3 +95,10 @@ endpoint = "/protected"
 headers = { "x-api-token" = "{{token}}" }
 expected_status = 200
 ```
+
+## Next Steps
+
+For more information about test configuration and advanced features, see:
+
+- [Test File Structure](./test_file_structure.md) - Details on the overall structure of test files
+- [Complete Reference](../reference/test_specification.md) - Comprehensive reference with examples for all features, including advanced assertions and response time validation

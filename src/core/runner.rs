@@ -4,6 +4,7 @@ use crate::parser::parse_tests;
 use colored::*;
 use serde_json::Value;
 use std::collections::HashMap;
+use std::time::Instant;
 
 /// Type alias for test result to reduce complexity
 pub type TestResult = (bool, u16, u16, Option<Value>, HashMap<String, String>);
@@ -84,12 +85,17 @@ impl TestRunner {
         test: &Test,
         test_suite: &TestSuite,
     ) -> TestResult {
+        // Start timing the request
+        let start_time = Instant::now();
+
         match client
             .execute_request(test, test_suite, &self.variables)
             .await
         {
             Ok(response) => {
-                let result = process_response(response, test, &mut self.variables).await;
+                // Pass the start time to process_response
+                let result =
+                    process_response(response, test, &mut self.variables, start_time).await;
                 self.results.push((
                     test.name.clone(),
                     result.0,

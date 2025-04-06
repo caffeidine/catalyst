@@ -54,6 +54,7 @@ Currently, Catalyst supports a single test file (`.catalyst/tests.toml`). If you
 
 ## Next Steps
 
-For information on security-related configuration, see:
+For more information, see:
 
 - [Security](./security.md) - Details on authentication and security configuration
+- [Complete Reference](../reference/test_specification.md) - Comprehensive reference with examples for all features, including advanced assertions and response time validation
