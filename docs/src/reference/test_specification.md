@@ -2,6 +2,42 @@
 
 This page serves as a technical reference for creating tests with Catalyst.
 
+## TOML Syntax Guide
+
+Catalyst uses TOML for test configuration. Understanding the TOML syntax is important for writing correct and maintainable tests.
+
+### Tables vs Arrays of Tables
+
+TOML has two main ways to define structures:
+
+1. **Tables `[table]`**: Define a single named table (object)
+2. **Arrays of Tables `[[table]]`**: Define an element in an array of tables (array of objects)
+
+#### When to Use Each Syntax
+
+- Use `[[tests]]` for each test because a test file can contain multiple tests
+- Use `[tests.body]`, `[tests.headers]`, etc. for single objects within a test
+- Use `[[tests.assertions]]` for assertions because a test can have multiple assertions
+- Use `[tests.assertions.value]` for the value of a specific assertion
+
+#### Example
+
+```toml
+[[tests]]                # First test (element in an array)
+name = "Example Test"
+
+[tests.body]            # Request body (single object)
+name = "Test User"
+
+[[tests.assertions]]     # First assertion (element in an array)
+type = "Contains"
+
+[tests.assertions.value] # Value of this assertion (single object)
+id = 123
+```
+
+This distinction is important for correctly representing data structures with different cardinalities in your tests.
+
 ## Basic Structure
 
 ```toml
@@ -107,15 +143,15 @@ name = "Get User with Assertions"
 method = "GET"
 endpoint = "/users/1"
 expected_status = 200
-assertions = [
-  # Only validate specific fields we care about
-  { type = "Contains", value = {
-    "id" = 1,
-    "name" = "John Doe"
-  }},
-  # Validate email format with regex
-  { type = "PathRegex", value = ["$.email", "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"] }
-]
+
+# Assertions using table array syntax for better readability
+[[tests.assertions]]
+type = "Contains"
+value = { "id" = 1, "name" = "John Doe" }
+
+[[tests.assertions]]
+type = "PathRegex"
+value = ["$.email", "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"]
 ```
 
 ## Assertion Types
@@ -136,29 +172,38 @@ method = "GET"
 endpoint = "/users/1"
 expected_status = 200
 
-assertions = [
-  # Example 1: Exact match (equivalent to expected_body)
-  { type = "Exact", value = {
-    "id" = 1,
-    "name" = "John Doe",
-    "email" = "john@example.com"
-  }},
+# Example 1: Exact match (equivalent to expected_body)
+[[tests.assertions]]
+type = "Exact"
 
-  # Example 2: Contains match (partial validation)
-  { type = "Contains", value = {
-    "id" = 1,
-    "roles" = ["user"]
-  }},
+# Using inline table for simple values
+[tests.assertions.value]
+id = 1
+name = "John Doe"
+email = "john@example.com"
 
-  # Example 3: Regex match on entire response
-  { type = "Regex", value = ".*\"email\":\\s*\"john@example.com\".*" },
+# Example 2: Contains match (partial validation)
+[[tests.assertions]]
+type = "Contains"
 
-  # Example 4: PathRegex match on specific field
-  { type = "PathRegex", value = ["$.email", ".*@example\\.com"] },
+[tests.assertions.value]
+id = 1
+roles = ["user"]
 
-  # Example 5: PathRegex for numeric validation
-  { type = "PathRegex", value = ["$.id", "^[0-9]+$"] }
-]
+# Example 3: Regex match on entire response
+[[tests.assertions]]
+type = "Regex"
+value = ".*\"email\":\\s*\"john@example.com\".*"
+
+# Example 4: PathRegex match on specific field
+[[tests.assertions]]
+type = "PathRegex"
+value = ["$.email", ".*@example\\.com"]
+
+# Example 5: PathRegex for numeric validation
+[[tests.assertions]]
+type = "PathRegex"
+value = ["$.id", "^[0-9]+$"]
 ```
 
 ## Using Variables in Assertions and Expected Body
@@ -181,11 +226,11 @@ name = "Get User Details"
 method = "GET"
 endpoint = "/users/{{user_id}}"
 expected_status = 200
-# Use the stored ID in expected_body
-expected_body = {
-  "id" = "{{user_id}}",  # Variable in expected_body
-  "name" = "John Doe"
-}
+
+# Use the stored ID in expected_body with inline table
+[tests.expected_body]
+id = "{{user_id}}"  # Variable in expected_body
+name = "John Doe"
 
 # Test 3: Alternative using assertions
 [[tests]]
@@ -193,12 +238,16 @@ name = "Verify User with Assertions"
 method = "GET"
 endpoint = "/users/{{user_id}}"
 expected_status = 200
-assertions = [
-  # Use variable in Contains assertion
-  { type = "Contains", value = { "id" = "{{user_id}}" } },
-  # Use variable in PathRegex assertion
-  { type = "PathRegex", value = ["$.id", "^{{user_id}}$"] }
-]
+
+# Use variable in Contains assertion
+[[tests.assertions]]
+type = "Contains"
+value = { "id" = "{{user_id}}" }
+
+# Use variable in PathRegex assertion
+[[tests.assertions]]
+type = "PathRegex"
+value = ["$.id", "^{{user_id}}$"]
 ```
 
 ## Variable Storage and Usage
@@ -213,18 +262,16 @@ endpoint = "/auth/login"
 body = { "username" = "user", "password" = "pass" }
 expected_status = 200
 
-# Extract and store values from JSON body
-store = {
-  "$.token" = "auth_token",        # Stores value at $.token in auth_token
-  "$.user.id" = "user_id",         # Stores value at $.user.id in user_id
-  "$.expires_at" = "token_expiry"  # Stores value at $.expires_at in token_expiry
-}
+# Extract and store values from JSON body using inline table
+[tests.store]
+"$.token" = "auth_token"        # Stores value at $.token in auth_token
+"$.user.id" = "user_id"         # Stores value at $.user.id in user_id
+"$.expires_at" = "token_expiry"  # Stores value at $.expires_at in token_expiry
 
-# Extract and store cookies
-get_cookie = {
-  "session" = "session_id",        # Stores session cookie value in session_id
-  "XSRF-TOKEN" = "csrf_token"      # Stores XSRF-TOKEN cookie value in csrf_token
-}
+# Extract and store cookies using inline table
+[tests.get_cookie]
+"session" = "session_id"        # Stores session cookie value in session_id
+"XSRF-TOKEN" = "csrf_token"      # Stores XSRF-TOKEN cookie value in csrf_token
 ```
 
 ### Using Stored Variables
@@ -234,17 +281,17 @@ get_cookie = {
 name = "Use Stored Variables"
 method = "GET"
 endpoint = "/users/{{user_id}}"  # Uses user_id variable in URL
-headers = {
-  "Authorization" = "Bearer {{auth_token}}",  # Uses auth_token in header
-  "X-CSRF-Token" = "{{csrf_token}}"           # Uses csrf_token in header
-}
 expected_status = 200
 
+# Headers using inline table or subtable syntax
+[tests.headers]
+"Authorization" = "Bearer {{auth_token}}"  # Uses auth_token in header
+"X-CSRF-Token" = "{{csrf_token}}"         # Uses csrf_token in header
+
 # Variables can be used in any part of the test
-body = {
-  "token" = "{{auth_token}}",
-  "session" = "{{session_id}}"
-}
+[tests.body]
+token = "{{auth_token}}"
+session = "{{session_id}}"
 ```
 
 ## Response Time Validation
@@ -265,8 +312,10 @@ max_response_time = 100  # Response must be received in less than 100ms
 name = "Log Response Time"
 method = "POST"
 endpoint = "/metrics/log"
-body = { "previous_response_time" = "{{response_time_ms}}" }
 expected_status = 200
+
+# Body using inline table for simple structure
+body = { "previous_response_time" = "{{response_time_ms}}" }
 ```
 
 ## Test Chaining Example
@@ -287,9 +336,10 @@ name = "Get Created Resource"
 method = "GET"
 endpoint = "/resources/{{resource_id}}"  # Use stored ID
 expected_status = 200
-assertions = [
-  { type = "Contains", value = { "name" = "New Resource" } }
-]
+
+[[tests.assertions]]
+type = "Contains"
+value = { "name" = "New Resource" }
 
 # Test 3: Update the resource
 [[tests]]
@@ -305,9 +355,10 @@ name = "Verify Update"
 method = "GET"
 endpoint = "/resources/{{resource_id}}"
 expected_status = 200
-assertions = [
-  { type = "Contains", value = { "name" = "Updated Resource" } }
-]
+
+[[tests.assertions]]
+type = "Contains"
+value = { "name" = "Updated Resource" }
 
 # Test 5: Delete the resource
 [[tests]]

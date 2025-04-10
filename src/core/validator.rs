@@ -1,7 +1,7 @@
 use crate::parser::parse_tests;
 
-pub fn validate() {
-    match parse_tests() {
+pub fn validate(file_path: Option<&str>) {
+    match parse_tests(file_path) {
         Ok(test_suite) => {
             if test_suite.tests.is_empty() {
                 println!("Validation failed: No tests found in `tests.toml`.");
@@ -22,7 +22,9 @@ pub fn validate() {
                 if test.endpoint.is_empty() {
                     println!("Error: Test `{}` is missing an endpoint.", test.name);
                 }
-                if !["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"].contains(&test.method.to_uppercase().as_str()) {
+                if !["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"]
+                    .contains(&test.method.to_uppercase().as_str())
+                {
                     println!(
                         "Error: Test `{}` has an invalid HTTP method `{}`.",
                         test.name, test.method

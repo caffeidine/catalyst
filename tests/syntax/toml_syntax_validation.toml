@@ -1,0 +1,133 @@
+[config]
+base_url = "https://httpbin.org"
+default_headers = { "Content-Type" = "application/json" }
+
+# Test 1: Basic test with simple assertion
+[[tests]]
+name = "Basic Test"
+method = "GET"
+endpoint = "/get"
+expected_status = 200
+
+# Simple assertion with inline value
+[[tests.assertions]]
+type = "Contains"
+value = { "url" = "https://httpbin.org/get" }
+
+# Test 2: Test with request body and complex assertions
+[[tests]]
+name = "Complex Test"
+method = "POST"
+endpoint = "/post"
+expected_status = 200
+
+# Request body as a table
+[tests.body]
+name = "Test User"
+email = "test@example.com"
+
+# First assertion
+[[tests.assertions]]
+type = "Contains"
+
+# Value of the assertion as a table
+[tests.assertions.value]
+url = "https://httpbin.org/post"
+
+# Nested field in the value
+[tests.assertions.value.json]
+name = "Test User"
+
+# Second assertion with array value
+[[tests.assertions]]
+type = "PathRegex"
+value = ["$.json.email", "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"]
+
+# Test 3: Variable storage test
+[[tests]]
+name = "Variable Storage Test"
+method = "POST"
+endpoint = "/post"
+expected_status = 200
+
+# Request body
+[tests.body]
+id = "12345"
+name = "Test Resource"
+
+# Variables to store
+[tests.store]
+"$.json.id" = "resource_id"
+"$.json.name" = "resource_name"
+
+# Test 4: Variable usage test
+[[tests]]
+name = "Variable Usage Test"
+method = "GET"
+endpoint = "/get"
+expected_status = 200
+
+# Query parameters using stored variables
+[tests.query_params]
+id = "{{resource_id}}"
+name = "{{resource_name}}"
+
+# Headers using stored variables
+[tests.headers]
+"X-Resource-ID" = "{{resource_id}}"
+
+# Assertion to verify variables were used correctly
+[[tests.assertions]]
+type = "Contains"
+
+[tests.assertions.value.args]
+id = "12345"
+name = "Test Resource"
+
+# Test 5: Response time validation
+[[tests]]
+name = "Response Time Test"
+method = "GET"
+endpoint = "/get"
+expected_status = 200
+max_response_time = 1000    # 1 second maximum
+
+# Test 6: Expected body validation
+[[tests]]
+name = "Expected Body Test"
+method = "GET"
+endpoint = "/get"
+expected_status = 200
+
+# Expected body as a table
+[tests.expected_body]
+url = "https://httpbin.org/get"
+
+# Empty args object
+[tests.expected_body.args]
+
+# Test 7: Multiple assertions of different types
+[[tests]]
+name = "Multiple Assertions Test"
+method = "GET"
+endpoint = "/get"
+expected_status = 200
+
+# Exact match assertion
+[[tests.assertions]]
+type = "Exact"
+
+# Value for exact match
+[tests.assertions.value]
+url = "https://httpbin.org/get"
+args = {}
+
+# Regex match assertion
+[[tests.assertions]]
+type = "Regex"
+value = ".*\"url\":\\s*\"https://httpbin.org/get\".*"
+
+# PathRegex match assertion
+[[tests.assertions]]
+type = "PathRegex"
+value = ["$.url", "^https://httpbin.org/get$"]

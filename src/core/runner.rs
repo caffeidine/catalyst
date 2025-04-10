@@ -46,8 +46,9 @@ impl TestRunner {
         &mut self,
         filter: Option<String>,
         verbose: bool,
+        file_path: Option<String>,
     ) -> Vec<TestResult> {
-        let test_suite = match parse_tests() {
+        let test_suite = match parse_tests(file_path.as_deref()) {
             Ok(suite) => suite,
             Err(err) => {
                 println!("Failed to parse tests: {}", err);

@@ -12,7 +12,19 @@ catalyst run
 
 This will execute all tests in the order they are defined in the file.
 
-## Filtering Tests
+## CLI Options
+
+Catalyst provides several command-line options to customize test execution:
+
+### Specifying a Custom Test File
+
+By default, Catalyst looks for tests in `.catalyst/tests.toml` in your current directory. You can specify a different file using the `--file` option:
+
+```bash
+catalyst run --file /path/to/custom/tests.toml
+```
+
+### Filtering Tests
 
 You can run specific tests by using the `--filter` option:
 
@@ -22,7 +34,7 @@ catalyst run --filter "Login"
 
 This will only run tests whose names contain the string "Login".
 
-## Verbose Output
+### Verbose Output
 
 For more detailed output, use the `--verbose` (or `-v`) flag:
 
@@ -32,12 +44,37 @@ catalyst run --verbose
 
 This will show additional information such as response bodies and headers.
 
-## Disabling Colored Output
+### Disabling Colored Output
 
 If you're running tests in an environment that doesn't support colored output, you can disable it:
 
 ```bash
 catalyst run --disable-color
+```
+
+### Complete CLI Reference
+
+Here's a complete list of available commands and options:
+
+```
+CATALYST COMMANDS:
+  run       Run API tests
+    Options:
+      -f, --filter <FILTER>    Filter by test name
+      --disable-color          Disable colored output
+      -v, --verbose            Enable verbose output
+      --file <FILE>            Specify a custom test file path
+
+  validate  Validate tests configuration
+    Options:
+      --file <FILE>            Specify a custom test file path
+
+  list      List available tests
+    Options:
+      -v, --verbose            Enable detailed test information
+      --file <FILE>            Specify a custom test file path
+
+  help      Print this message or the help of the given subcommand(s)
 ```
 
 ## Understanding Test Results

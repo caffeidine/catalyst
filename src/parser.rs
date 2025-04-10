@@ -2,14 +2,14 @@ use crate::models::TestSuite;
 use std::fs;
 use toml;
 
-pub fn parse_tests() -> Result<TestSuite, &'static str> {
-    let content =
-        fs::read_to_string(".catalyst/tests.toml").map_err(|_| "Failed to read tests file")?;
+pub fn parse_tests(file_path: Option<&str>) -> Result<TestSuite, &'static str> {
+    let path = file_path.unwrap_or(".catalyst/tests.toml");
+    let content = fs::read_to_string(path).map_err(|_| "Failed to read tests file")?;
     toml::from_str(&content).map_err(|_| "Invalid TOML format")
 }
 
-pub fn list_tests(verbose: bool) {
-    match parse_tests() {
+pub fn list_tests(verbose: bool, file_path: Option<&str>) {
+    match parse_tests(file_path) {
         Ok(test_suite) => {
             if test_suite.tests.is_empty() {
                 println!("No tests found in `tests.toml`.");

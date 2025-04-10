@@ -1,4 +1,4 @@
-use catalyst::{Opts, run};
+use catalyst::cli::{Opts, run};
 use clap::Parser;
 
 fn main() {
