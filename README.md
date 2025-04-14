@@ -1,9 +1,10 @@
 # Catalyst
 
-[![Version](https://img.shields.io/badge/version-0.2.1-blue)](https://github.com/caffeidine/catalyst/releases)
+[![Version](https://img.shields.io/badge/version-0.2.2-blue)](https://github.com/caffeidine/catalyst/releases)
 [![License: MPL-2.0](https://img.shields.io/badge/License-MPL--2.0-brightgreen.svg)](https://opensource.org/licenses/MPL-2.0)
 [![Crates.io](https://img.shields.io/badge/crates.io-catalyst-orange)](https://crates.io/crates/catalyst)
 [![Documentation](https://img.shields.io/badge/docs-catalyst.caffeidine.com-informational)](https://catalyst.caffeidine.com)
+![crates.io total download number](https://img.shields.io/crates/d/catalyst)
 
 **A lightweight and powerful API testing tool**
 
