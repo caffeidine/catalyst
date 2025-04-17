@@ -1,15 +1,13 @@
-use crate::http::{HttpClient, process_response};
-use crate::models::{Test, TestSuite};
+use crate::engine::execution::{ExecutionResult, execute_test_case};
+use crate::http::client::HttpClient;
+use crate::models::suite::TestSuite;
+use crate::models::test::Test;
 use crate::parser::parse_tests;
 use colored::*;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::time::Instant;
 
-/// Type alias for test result to reduce complexity
-pub type TestResult = (bool, u16, u16, Option<Value>, HashMap<String, String>);
-
-/// Type alias for stored test result with name
 pub type StoredTestResult = (
     String,
     bool,
@@ -47,7 +45,7 @@ impl TestRunner {
         filter: Option<String>,
         verbose: bool,
         file_path: Option<String>,
-    ) -> Vec<TestResult> {
+    ) -> Vec<ExecutionResult> {
         let test_suite = match parse_tests(file_path.as_deref()) {
             Ok(suite) => suite,
             Err(err) => {
@@ -85,7 +83,7 @@ impl TestRunner {
         client: &HttpClient,
         test: &Test,
         test_suite: &TestSuite,
-    ) -> TestResult {
+    ) -> ExecutionResult {
         // Start timing the request
         let start_time = Instant::now();
 
@@ -94,16 +92,15 @@ impl TestRunner {
             .await
         {
             Ok(response) => {
-                // Pass the start time to process_response
                 let result =
-                    process_response(response, test, &mut self.variables, start_time).await;
+                    execute_test_case(response, test, &mut self.variables, start_time).await;
                 self.results.push((
                     test.name.clone(),
-                    result.0,
-                    result.1,
-                    result.2,
-                    result.3.clone(),
-                    result.4.clone(),
+                    result.success,
+                    result.expected_status,
+                    result.actual_status,
+                    result.response_body.clone(),
+                    result.headers.clone(),
                 ));
                 result
             }
@@ -117,7 +114,14 @@ impl TestRunner {
                     None,
                     HashMap::new(),
                 ));
-                (false, test.expected_status, 0, None, HashMap::new())
+                ExecutionResult {
+                    success: false,
+                    expected_status: test.expected_status,
+                    actual_status: 0,
+                    response_time_ms: 0,
+                    response_body: None,
+                    headers: HashMap::new(),
+                }
             }
         }
     }

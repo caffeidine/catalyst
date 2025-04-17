@@ -1,5 +1,6 @@
+use crate::models::config::Config;
+use crate::models::test::Test;
 use serde::Deserialize;
-use crate::models::{Config, Test};
 
 #[derive(Debug, Deserialize)]
 pub struct TestSuite {

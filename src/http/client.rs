@@ -1,4 +1,5 @@
-use crate::models::{Test, TestSuite};
+use crate::models::suite::TestSuite;
+use crate::models::test::Test;
 use reqwest::{Client, Response};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -96,7 +97,7 @@ impl HttpClient {
 }
 
 // Helper function to replace variables in strings
-fn replace_variables(input: &str, variables: &HashMap<String, String>) -> String {
+pub fn replace_variables(input: &str, variables: &HashMap<String, String>) -> String {
     let mut result = input.to_string();
     for (key, value) in variables {
         let pattern = format!("{{{{{}}}}}", key);
