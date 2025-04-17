@@ -215,4 +215,4 @@ For more detailed information about specific aspects of configuration, see:
 
 - [Test File Structure](./configuration/test_file_structure.md)
 - [Security](./configuration/security.md)
-- [Complete Reference](./reference/test_specification.md) - Comprehensive reference with examples for all features
+- [Complete Reference](./reference/references.md) - Comprehensive reference with examples for all features

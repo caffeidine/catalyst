@@ -8,4 +8,4 @@
 - [Configuration](./configuration.md)
   - [Test File Structure](./configuration/test_file_structure.md)
   - [Security](./configuration/security.md)
-- [Reference](./reference/test_specification.md)
+- [Reference](./reference/references.md)
