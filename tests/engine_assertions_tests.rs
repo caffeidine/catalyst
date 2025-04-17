@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use catalyst::http::response::{body_matches, contains_json_value, validate_assertion};
+    use catalyst::engine::assertions::{body_matches, contains_json_value, validate_assertion};
     use catalyst::models::test::JsonAssertion;
     use serde_json::json;
 

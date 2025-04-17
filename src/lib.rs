@@ -7,52 +7,28 @@
 //! - **Test Definition**: Configure API test scenarios using a configuration file.
 //! - **Variable Management**: Chain tests by extracting and storing variables (e.g., cookies, JSON data).
 //! - **Configuration Validation**: Pre-run syntax and value checks for test configurations.
+//! - **Advanced Assertions**: Flexible response validation with multiple assertion types.
 //!
-//! ## Installation
+//! ## Architecture
 //!
-//! ```sh
-//! cargo install catalyst
-//! ```
-//!
-//! ## Usage
-//!
-//! Create your test file in your project `.catalyst/tests.toml`
-//!
-//! ### Example test configuration
-//!
-//! ```toml
-//! [config]
-//! base_url = "http://localhost:8080"
-//! default_headers = { "User-Agent" = "Catalyst", "Content-Type" = "application/json" }
-//!
-//! [[tests]]
-//! name = "Example Test"
-//! method = "GET"
-//! endpoint = "/api/example"
-//! expected_status = 200
-//! ```
-//!
-//! ### Running Tests
-//!
-//! Execute the tests from the command line:
-//!
-//! ```sh
-//! catalyst run
-//! ```
-//!
-//! ### To list all tests or validate your configuration, use:
-//!
-//! ```sh
-//! catalyst list --verbose
-//! catalyst validate
-//! ```
+//! The codebase is organized into logical modules:
+//! - **parser**: Test file parsing and validation
+//! - **engine**: Core test execution, validation, and assertions
+//! - **http**: HTTP client and request handling
+//! - **models**: Data structures and types
+//! - **core**: High-level orchestration
+//! - **cli**: Command-line interface
+//! - **utils**: Utility functions
 
+pub mod checker;
 pub mod cli;
 pub mod core;
+pub mod engine;
 pub mod http;
 pub mod models;
-pub mod parser;
 pub mod utils;
 
-// Re-export CLI components for backward compatibility
-pub use cli::{Commands, Opts, run};
+// Re-export commonly used items
+pub use checker::{list_tests, parse_tests, validate};
+pub use cli::{Commands, Opts};
+pub use core::runner::TestRunner;

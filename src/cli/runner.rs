@@ -1,6 +1,6 @@
 use super::commands::{Commands, Opts};
-use crate::core;
-use crate::parser;
+use crate::core::runner::TestRunner;
+use crate::checker::{list_tests, validate};
 
 pub fn run(opts: Opts) {
     match opts.command {
@@ -11,18 +11,39 @@ pub fn run(opts: Opts) {
             file,
         } => {
             println!("Running API tests...");
-            let mut runner = core::runner::TestRunner::new(disable_color);
-            tokio::runtime::Runtime::new()
-                .unwrap()
-                .block_on(runner.execute_tests(filter, verbose, file));
+            tokio::runtime::Runtime::new().unwrap().block_on(run_tests(
+                filter,
+                verbose,
+                disable_color,
+                file,
+            ));
         }
         Commands::Validate { file } => {
             println!("Validating tests configuration...");
-            core::validator::validate(file.as_deref());
+            tokio::runtime::Runtime::new()
+                .unwrap()
+                .block_on(run_validate(file));
         }
         Commands::List { verbose, file } => {
             println!("Listing available tests...");
-            parser::list_tests(verbose, file.as_deref());
+            list_tests(verbose, file.as_deref());
         }
     }
+}
+
+pub async fn run_validate(file: Option<String>) {
+    match file {
+        Some(f) => validate(Some(&f)),
+        None => validate(None),
+    }
+}
+
+pub async fn run_tests(
+    filter: Option<String>,
+    verbose: bool,
+    disable_color: bool,
+    file: Option<String>,
+) {
+    let mut runner = TestRunner::new(disable_color);
+    runner.execute_tests(filter, verbose, file).await;
 }
