@@ -1,4 +1,4 @@
-use crate::parser::parse_tests;
+use crate::checker::parse_tests;
 
 pub fn validate(file_path: Option<&str>) {
     match parse_tests(file_path) {

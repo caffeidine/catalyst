@@ -1,5 +1,6 @@
 use serde_json::Value;
 use std::collections::HashMap;
+use std::env;
 
 pub fn replace_variables_in_json(json: &Value, variables: &HashMap<String, String>) -> Value {
     match json {
@@ -41,6 +42,18 @@ pub fn extract_cookie_value(cookie_header: &str, cookie_name: &str) -> Option<St
     None
 }
 
+fn resolve_variable_value(value: &str) -> Option<String> {
+    if let Some(env_var) = value
+        .strip_prefix("env_var")
+        .and_then(|s| s.strip_suffix(")"))
+    {
+        let env_var = env_var.trim_matches('"');
+        Some(env::var(env_var).unwrap_or_default())
+    } else {
+        None
+    }
+}
+
 pub fn store_variables(
     body: &Value,
     store_map: &HashMap<String, String>,
@@ -51,7 +64,9 @@ pub fn store_variables(
 ) {
     // Store values from JSON body
     for (json_path, variable_name) in store_map {
-        if let Some(value) = super::assertions::extract_json_value(body, json_path) {
+        if let Some(env_value) = resolve_variable_value(variable_name) {
+            variables.insert(json_path.clone(), env_value);
+        } else if let Some(value) = super::assertions::extract_json_value(body, json_path) {
             variables.insert(variable_name.clone(), value);
         }
     }

@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use catalyst::parser::parse_tests;
+    use catalyst::checker::parse_tests;
 
     #[test]
     fn test_parse_tests_valid() {

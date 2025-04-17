@@ -20,15 +20,15 @@
 //! - **cli**: Command-line interface
 //! - **utils**: Utility functions
 
+pub mod checker;
 pub mod cli;
 pub mod core;
 pub mod engine;
 pub mod http;
 pub mod models;
-pub mod parser;
 pub mod utils;
 
 // Re-export commonly used items
+pub use checker::{list_tests, parse_tests, validate};
 pub use cli::{Commands, Opts};
 pub use core::runner::TestRunner;
-pub use parser::{list_tests, parse_tests, validate};

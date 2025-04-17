@@ -1,6 +1,6 @@
 use super::commands::{Commands, Opts};
 use crate::core::runner::TestRunner;
-use crate::parser::{list_tests, validate};
+use crate::checker::{list_tests, validate};
 
 pub fn run(opts: Opts) {
     match opts.command {

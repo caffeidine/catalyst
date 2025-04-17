@@ -1,8 +1,8 @@
+use crate::checker::parse_tests;
 use crate::engine::execution::{ExecutionResult, execute_test_case};
 use crate::http::client::HttpClient;
 use crate::models::suite::TestSuite;
 use crate::models::test::Test;
-use crate::parser::parse_tests;
 use colored::*;
 use serde_json::Value;
 use std::collections::HashMap;
