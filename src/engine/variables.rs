@@ -42,12 +42,14 @@ pub fn extract_cookie_value(cookie_header: &str, cookie_name: &str) -> Option<St
     None
 }
 
-fn resolve_variable_value(value: &str) -> Option<String> {
-    if let Some(env_var) = value
-        .strip_prefix("env_var")
+pub fn resolve_variable_value(value: &str) -> Option<String> {
+    let value = value.trim();
+    if let Some(inner) = value
+        .strip_prefix("env_var(")
         .and_then(|s| s.strip_suffix(")"))
     {
-        let env_var = env_var.trim_matches('"');
+        let inner = inner.trim();
+        let env_var = inner.trim_matches(|c: char| c == '"' || c == '\'' || c.is_whitespace());
         Some(env::var(env_var).unwrap_or_default())
     } else {
         None
