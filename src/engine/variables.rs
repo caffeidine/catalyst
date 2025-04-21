@@ -1,12 +1,19 @@
+use crate::debug;
 use crate::utils::string::replace_variables;
 use dotenv::dotenv;
 use serde_json::Value;
 use std::collections::HashMap;
 
 pub fn load_env_files() {
-    let _ = dotenv::from_filename(".env.local")
-        .or_else(|_| dotenv::from_filename(".env.dev"))
-        .or_else(|_| dotenv());
+    if dotenv::from_filename(".env.local").is_ok() {
+        debug!("Loaded .env.local");
+    } else if dotenv::from_filename(".env.dev").is_ok() {
+        debug!("Loaded .env.dev");
+    } else if dotenv().is_ok() {
+        debug!("Loaded .env");
+    } else {
+        debug!("No .env file loaded");
+    }
 }
 
 pub fn replace_variables_in_json(json: &Value, vars: &HashMap<String, String>) -> Value {
@@ -46,6 +53,8 @@ pub fn store_variables(
     response_time_ms: u64,
     vars: &mut HashMap<String, String>,
 ) {
+    debug!("Headers received: {:?}", headers);
+
     vars.insert("response_time_ms".to_string(), response_time_ms.to_string());
 
     for (var_name, path) in store_map {
@@ -59,14 +68,29 @@ pub fn store_variables(
     }
 
     if let Some(cookies) = cookie_map {
-        if let Some(header) = headers.get("set-cookie") {
+        debug!("Looking for cookies to extract: {:?}", cookies);
+
+        // Case-insensitive lookup for Set-Cookie header
+        let set_cookie_header = headers
+            .iter()
+            .find(|(k, _)| k.to_lowercase() == "set-cookie")
+            .map(|(_, v)| v);
+
+        debug!("Found Set-Cookie header: {:?}", set_cookie_header);
+
+        if let Some(header) = set_cookie_header {
             for (name, var_name) in cookies {
                 if let Some(value) = extract_cookie_value(header, name) {
+                    debug!("Extracted cookie {}={}", name, value);
                     vars.insert(var_name.clone(), value);
+                } else {
+                    debug!("Failed to extract cookie {}", name);
                 }
             }
         }
     }
+
+    debug!("Variables after store: {:?}", vars);
 }
 
 fn extract_cookie_value(header: &str, name: &str) -> Option<String> {

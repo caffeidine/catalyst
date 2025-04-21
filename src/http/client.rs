@@ -50,12 +50,12 @@ impl HttpClient {
         }
 
         let response = builder.send().await.map_err(|e| e.to_string())?;
-
         let status = response.status().as_u16();
+
         let headers: HashMap<String, String> = response
             .headers()
             .iter()
-            .map(|(k, v)| (k.to_string(), v.to_str().unwrap_or("").to_string()))
+            .map(|(k, v)| (k.to_string(), v.to_str().unwrap_or_default().to_string()))
             .collect();
 
         let body = response.json().await.map_err(|e| e.to_string())?;

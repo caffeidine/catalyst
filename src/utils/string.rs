@@ -1,3 +1,4 @@
+use crate::debug;
 use regex::Regex;
 use std::{collections::HashMap, sync::OnceLock};
 
@@ -14,13 +15,20 @@ fn var_pattern() -> &'static Regex {
 
 pub fn replace_variables(input: &str, vars: &HashMap<String, String>) -> String {
     let with_env = env_pattern().replace_all(input, |caps: &regex::Captures| {
-        std::env::var(&caps[1]).unwrap_or_else(|_| caps[0].to_string())
+        let var_name = &caps[1];
+        let value = std::env::var(var_name).unwrap_or_else(|_| caps[0].to_string());
+        debug!("ENV var replace: {} => {}", var_name, value);
+        value
     });
 
     var_pattern()
         .replace_all(&with_env, |caps: &regex::Captures| {
-            vars.get(&caps[1])
-                .map_or_else(|| caps[0].to_string(), |v| v.to_string())
+            let var_name = &caps[1];
+            let value = vars
+                .get(var_name)
+                .map_or_else(|| caps[0].to_string(), |v| v.to_string());
+            debug!("VAR replace: {} => {}", var_name, value);
+            value
         })
         .into_owned()
 }

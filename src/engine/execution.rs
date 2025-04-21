@@ -1,4 +1,5 @@
 use super::{variables, verify};
+use crate::debug;
 use crate::http::client::{HttpClient, RequestData};
 use crate::models::test::Test;
 use crate::utils::string::replace_variables;
@@ -18,7 +19,7 @@ pub struct ExecutionResult {
 pub async fn run(
     client: &HttpClient,
     test: &Test,
-    vars: &HashMap<String, String>,
+    vars: &mut HashMap<String, String>,
 ) -> ExecutionResult {
     let start = Instant::now();
 
@@ -53,22 +54,52 @@ pub async fn run(
             .map(|b| variables::replace_variables_in_json(b, vars)),
     };
 
+    debug!(
+        "Request for '{}': headers = {:?}, body = {:?}",
+        test.name, request.headers, request.body
+    );
+
     match client.execute(request).await {
-        Ok((status, body, headers)) => {
+        Ok((status, body, mut headers)) => {
             let time_ms = start.elapsed().as_millis() as u64;
 
-            if let Some(store) = &test.store {
+            // Add lowercase versions of headers for case-insensitive lookup
+            let header_keys: Vec<String> = headers.keys().cloned().collect();
+            for key in header_keys {
+                if let Some(value) = headers.get(&key) {
+                    headers.insert(key.to_lowercase(), value.clone());
+                }
+            }
+
+            debug!("Response headers: {:?}", headers);
+
+            // Extract cookies first if requested
+            if let Some(cookie_map) = &test.get_cookie {
+                debug!("Attempting to extract cookies: {:?}", cookie_map);
                 variables::store_variables(
                     &body,
-                    store,
+                    &HashMap::new(),
                     &headers,
-                    &test.get_cookie,
+                    &Some(cookie_map.clone()),
                     time_ms,
-                    &mut HashMap::new(),
+                    vars,
                 );
+                debug!("Variables after cookie extraction: {:?}", vars);
             }
 
             let validation = verify::check(test, status, &body, time_ms, vars);
+
+            // Store other variables if test passed
+            if validation.ok && test.store.is_some() {
+                variables::store_variables(
+                    &body,
+                    test.store.as_ref().unwrap(),
+                    &headers,
+                    &None,
+                    time_ms,
+                    vars,
+                );
+            }
 
             ExecutionResult {
                 success: validation.ok,

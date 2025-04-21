@@ -23,6 +23,9 @@ pub enum Commands {
 
         #[arg(long, help = "Specify a custom test file path")]
         file: Option<String>,
+
+        #[arg(short = 'd', long, help = "Enable debug output")]
+        debug: bool,
     },
 
     Validate {
