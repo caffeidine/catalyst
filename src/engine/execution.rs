@@ -1,90 +1,122 @@
-use crate::engine::{test_validator::validate_test, variables::store_variables};
+use super::{variables, verify};
+use crate::debug;
+use crate::http::client::{HttpClient, RequestData};
 use crate::models::test::Test;
-use reqwest::Response;
+use crate::utils::string::replace_variables;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::time::Instant;
 
 pub struct ExecutionResult {
     pub success: bool,
-    pub expected_status: u16,
-    pub actual_status: u16,
-    pub response_time_ms: u64,
-    pub response_body: Option<Value>,
+    pub status: (u16, u16),
+    pub time_ms: u64,
+    pub body: Option<Value>,
     pub headers: HashMap<String, String>,
+    pub errors: Vec<String>,
 }
 
-pub async fn execute_test_case(
-    response: Response,
+pub async fn run(
+    client: &HttpClient,
     test: &Test,
-    variables: &mut HashMap<String, String>,
-    start_time: Instant,
+    vars: &mut HashMap<String, String>,
 ) -> ExecutionResult {
-    let status = response.status().as_u16();
-    let headers = response.headers().clone();
-    let mut headers_map = HashMap::new();
+    let start = Instant::now();
 
-    // Extract headers
-    for (key, value) in headers.iter() {
-        headers_map.insert(key.to_string(), value.to_str().unwrap_or("").to_string());
-    }
+    let headers = test
+        .headers
+        .as_ref()
+        .map(|h| {
+            h.iter()
+                .map(|(k, v)| (k.clone(), replace_variables(v, vars)))
+                .collect()
+        })
+        .unwrap_or_default();
 
-    // Parse response body
-    let body = parse_response_body(response).await;
+    let params = test
+        .query_params
+        .as_ref()
+        .map(|p| {
+            p.iter()
+                .map(|(k, v)| (k.clone(), replace_variables(v, vars)))
+                .collect()
+        })
+        .unwrap_or_default();
 
-    // Calculate response time
-    let response_time_ms = start_time.elapsed().as_millis() as u64;
+    let request = RequestData {
+        method: test.method.clone(),
+        url: replace_variables(&test.endpoint, vars),
+        headers,
+        params,
+        body: test
+            .body
+            .as_ref()
+            .map(|b| variables::replace_variables_in_json(b, vars)),
+    };
 
-    // Validate test
-    let validation_result = validate_test(test, status, &body, response_time_ms, variables);
+    debug!(
+        "Request for '{}': headers = {:?}, body = {:?}",
+        test.name, request.headers, request.body
+    );
 
-    // Store variables if test passed
-    if validation_result.success {
-        store_variables(
-            &body,
-            test.store.as_ref().unwrap_or(&HashMap::new()),
-            &headers_map,
-            &test.get_cookie,
-            response_time_ms,
-            variables,
-        );
-    }
+    match client.execute(request).await {
+        Ok((status, body, mut headers)) => {
+            let time_ms = start.elapsed().as_millis() as u64;
 
-    ExecutionResult {
-        success: validation_result.success,
-        expected_status: validation_result.expected_status,
-        actual_status: validation_result.actual_status,
-        response_time_ms,
-        response_body: Some(body),
-        headers: headers_map,
-    }
-}
+            // Add lowercase versions of headers for case-insensitive lookup
+            let header_keys: Vec<String> = headers.keys().cloned().collect();
+            for key in header_keys {
+                if let Some(value) = headers.get(&key) {
+                    headers.insert(key.to_lowercase(), value.clone());
+                }
+            }
 
-async fn parse_response_body(response: Response) -> Value {
-    let content_type = response
-        .headers()
-        .get("content-type")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("");
+            debug!("Response headers: {:?}", headers);
 
-    if content_type.contains("application/json") {
-        match response.json().await {
-            Ok(json) => json,
-            Err(err) => {
-                println!("Error parsing response body as JSON: {}", err);
-                Value::Null
+            // Extract cookies first if requested
+            if let Some(cookie_map) = &test.get_cookie {
+                debug!("Attempting to extract cookies: {:?}", cookie_map);
+                variables::store_variables(
+                    &body,
+                    &HashMap::new(),
+                    &headers,
+                    &Some(cookie_map.clone()),
+                    time_ms,
+                    vars,
+                );
+                debug!("Variables after cookie extraction: {:?}", vars);
+            }
+
+            let validation = verify::check(test, status, &body, time_ms, vars);
+
+            // Store other variables if test passed
+            if validation.ok && test.store.is_some() {
+                variables::store_variables(
+                    &body,
+                    test.store.as_ref().unwrap(),
+                    &headers,
+                    &None,
+                    time_ms,
+                    vars,
+                );
+            }
+
+            ExecutionResult {
+                success: validation.ok,
+                status: (test.expected_status, status),
+                time_ms,
+                body: Some(body),
+                headers,
+                errors: validation.errors,
             }
         }
-    } else {
-        match response.text().await {
-            Ok(text) => match serde_json::from_str(&text) {
-                Ok(json_value) => json_value,
-                Err(_) => Value::String(text),
-            },
-            Err(err) => {
-                println!("Error reading response body as text: {}", err);
-                Value::Null
-            }
-        }
+        Err(err) => ExecutionResult {
+            success: false,
+            status: (test.expected_status, 0),
+            time_ms: 0,
+            body: None,
+            headers: HashMap::new(),
+            errors: vec![err.to_string()],
+        },
     }
 }

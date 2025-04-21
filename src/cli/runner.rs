@@ -1,6 +1,7 @@
 use super::commands::{Commands, Opts};
-use crate::core::runner::TestRunner;
 use crate::checker::{list_tests, validate};
+use crate::core::runner::TestRunner;
+use crate::utils::debug;
 
 pub fn run(opts: Opts) {
     match opts.command {
@@ -9,7 +10,11 @@ pub fn run(opts: Opts) {
             disable_color,
             verbose,
             file,
+            debug: debug_enabled,
         } => {
+            if debug_enabled {
+                debug::enable_debug();
+            }
             println!("Running API tests...");
             tokio::runtime::Runtime::new().unwrap().block_on(run_tests(
                 filter,

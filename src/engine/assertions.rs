@@ -1,12 +1,10 @@
 use regex::Regex;
 use serde_json::Value;
 
-/// Function to check if a body matches an expected value (exact match)
 pub fn body_matches(expected: &Value, actual: &Value) -> bool {
     match expected {
         Value::Object(expected_obj) => {
             if let Value::Object(actual_obj) = actual {
-                // Check that all keys in expected exist in actual with the same values
                 for (key, expected_value) in expected_obj {
                     match actual_obj.get(key) {
                         Some(actual_value) => {
@@ -41,7 +39,6 @@ pub fn body_matches(expected: &Value, actual: &Value) -> bool {
     }
 }
 
-/// Function to validate a JSON assertion against the actual response body
 pub fn validate_assertion(assertion: &crate::models::test::JsonAssertion, actual: &Value) -> bool {
     match assertion {
         crate::models::test::JsonAssertion::Exact(expected) => body_matches(expected, actual),
@@ -74,7 +71,6 @@ pub fn validate_assertion(assertion: &crate::models::test::JsonAssertion, actual
     }
 }
 
-/// Helper function for Contains assertion
 pub fn contains_json_value(expected: &Value, actual: &Value) -> bool {
     match (expected, actual) {
         (Value::Object(expected_obj), Value::Object(actual_obj)) => {
@@ -105,7 +101,6 @@ pub fn contains_json_value(expected: &Value, actual: &Value) -> bool {
     }
 }
 
-/// Extracts a value from a JSON object using a dot-notation path
 pub fn extract_json_value(json: &Value, path: &str) -> Option<String> {
     let parts: Vec<&str> = path.trim_start_matches("$.").split('.').collect();
     let mut current = json;
