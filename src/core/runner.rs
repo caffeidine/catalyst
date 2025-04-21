@@ -1,5 +1,6 @@
 use crate::checker::parse_tests;
 use crate::engine::execution::{ExecutionResult, execute_test_case};
+use crate::engine::variables::load_env_files;
 use crate::http::client::HttpClient;
 use crate::models::suite::TestSuite;
 use crate::models::test::Test;
@@ -46,6 +47,8 @@ impl TestRunner {
         verbose: bool,
         file_path: Option<String>,
     ) -> Vec<ExecutionResult> {
+        load_env_files();
+
         let test_suite = match parse_tests(file_path.as_deref()) {
             Ok(suite) => suite,
             Err(err) => {
@@ -53,6 +56,20 @@ impl TestRunner {
                 return Vec::new();
             }
         };
+
+        // Initialize environment variables from config if present
+        if let Some(env_config) = &test_suite.config.env {
+            if let Some(store) = &env_config.store {
+                for (var_name, env_var) in store {
+                    // Add to variables map with empty string as default
+                    self.variables.insert(
+                        var_name.clone(),
+                        std::env::var(env_var.trim_matches(|c| c == '$' || c == '{' || c == '}'))
+                            .unwrap_or_default(),
+                    );
+                }
+            }
+        }
 
         let client = HttpClient::new();
         let mut results = Vec::new();

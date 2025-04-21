@@ -1,6 +1,17 @@
+use dotenv::dotenv;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::env;
+use std::path::Path;
+
+pub fn load_env_files() {
+    for env_file in &[".env.local", ".env.dev", ".env"] {
+        if Path::new(env_file).exists() {
+            dotenv().ok();
+            break;
+        }
+    }
+}
 
 pub fn replace_variables_in_json(json: &Value, variables: &HashMap<String, String>) -> Value {
     match json {
@@ -42,17 +53,14 @@ pub fn extract_cookie_value(cookie_header: &str, cookie_name: &str) -> Option<St
     None
 }
 
-pub fn resolve_variable_value(value: &str) -> Option<String> {
-    let value = value.trim();
-    if let Some(inner) = value
-        .strip_prefix("env_var(")
-        .and_then(|s| s.strip_suffix(")"))
+pub fn resolve_env_var(var_name: &str) -> String {
+    if let Some(stripped) = var_name
+        .strip_prefix("${{")
+        .and_then(|s| s.strip_suffix("}}"))
     {
-        let inner = inner.trim();
-        let env_var = inner.trim_matches(|c: char| c == '"' || c == '\'' || c.is_whitespace());
-        Some(env::var(env_var).unwrap_or_default())
+        env::var(stripped).unwrap_or_default()
     } else {
-        None
+        var_name.to_string()
     }
 }
 
@@ -64,12 +72,12 @@ pub fn store_variables(
     response_time_ms: u64,
     variables: &mut HashMap<String, String>,
 ) {
-    // Store values from JSON body
-    for (json_path, variable_name) in store_map {
-        if let Some(env_value) = resolve_variable_value(variable_name) {
-            variables.insert(json_path.clone(), env_value);
-        } else if let Some(value) = super::assertions::extract_json_value(body, json_path) {
-            variables.insert(variable_name.clone(), value);
+    for (var_name, value) in store_map {
+        let resolved_value = resolve_env_var(value);
+        if !resolved_value.is_empty() {
+            variables.insert(var_name.clone(), resolved_value);
+        } else if let Some(json_value) = super::assertions::extract_json_value(body, var_name) {
+            variables.insert(value.clone(), json_value);
         }
     }
 
