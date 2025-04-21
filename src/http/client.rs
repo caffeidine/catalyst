@@ -58,7 +58,14 @@ impl HttpClient {
             .map(|(k, v)| (k.to_string(), v.to_str().unwrap_or_default().to_string()))
             .collect();
 
-        let body = response.json().await.map_err(|e| e.to_string())?;
+        let body = if response.content_length().unwrap_or(0) == 0 {
+            Value::Null
+        } else {
+            match response.json().await {
+                Ok(json) => json,
+                Err(_) => ("Failed to parse response body").into(),
+            }
+        };
 
         Ok((status, body, headers))
     }

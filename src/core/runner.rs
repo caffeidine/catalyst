@@ -122,12 +122,9 @@ impl TestRunner {
                 println!("{}", status_display);
 
                 if let Some(body) = &result.response_body {
-                    println!("\nResponse Body:");
                     println!(
-                        "{}",
-                        serde_json::to_string_pretty(body)
-                            .unwrap_or_default()
-                            .cyan()
+                        "\nResponse Body: {}",
+                        serde_json::to_string_pretty(body).unwrap_or_default()
                     );
                 }
 
