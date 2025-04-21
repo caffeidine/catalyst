@@ -1,107 +1,65 @@
-use crate::models::suite::TestSuite;
-use crate::models::test::Test;
-use reqwest::{Client, Response};
+use crate::models::config::Config;
+use reqwest::Client;
 use serde_json::Value;
 use std::collections::HashMap;
 
-pub struct HttpClient {
-    client: Client,
+pub struct RequestData {
+    pub method: String,
+    pub url: String,
+    pub headers: Vec<(String, String)>,
+    pub params: Vec<(String, String)>,
+    pub body: Option<Value>,
 }
 
-impl Default for HttpClient {
-    fn default() -> Self {
-        Self {
-            client: Client::new(),
-        }
-    }
+pub struct HttpClient {
+    client: Client,
+    config: Config,
 }
 
 impl HttpClient {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(config: &Config) -> Self {
+        HttpClient {
+            client: Client::new(),
+            config: config.clone(),
+        }
     }
 
-    pub async fn execute_request(
+    pub async fn execute(
         &self,
-        test: &Test,
-        test_suite: &TestSuite,
-        variables: &HashMap<String, String>,
-    ) -> Result<Response, reqwest::Error> {
-        let base_url = &test_suite.config.base_url;
-        let endpoint = replace_variables(&test.endpoint, variables);
-        let url = format!("{}{}", base_url, endpoint);
+        request: RequestData,
+    ) -> Result<(u16, Value, HashMap<String, String>), String> {
+        let url = format!("{}{}", self.config.base_url, request.url);
 
-        let mut request_builder = match test.method.to_uppercase().as_str() {
-            "GET" => self.client.get(&url),
-            "POST" => self.client.post(&url),
-            "PUT" => self.client.put(&url),
-            "DELETE" => self.client.delete(&url),
-            "PATCH" => self.client.patch(&url),
-            "HEAD" => self.client.head(&url),
-            "OPTIONS" => self.client.request(reqwest::Method::OPTIONS, &url),
-            _ => panic!("Unsupported HTTP method: {}", test.method),
-        };
+        let mut builder = self
+            .client
+            .request(request.method.parse().unwrap(), url)
+            .query(&request.params);
 
-        // Add default headers from config
-        if let Some(default_headers) = &test_suite.config.default_headers {
-            for (key, value) in default_headers {
-                request_builder = request_builder.header(key, replace_variables(value, variables));
+        if let Some(default_headers) = &self.config.default_headers {
+            for (k, v) in default_headers {
+                builder = builder.header(k, v);
             }
         }
 
-        // Add test-specific headers
-        if let Some(headers) = &test.headers {
-            for (key, value) in headers {
-                request_builder = request_builder.header(key, replace_variables(value, variables));
-            }
+        for (k, v) in request.headers {
+            builder = builder.header(k, v);
         }
 
-        // Add query parameters
-        if let Some(query_params) = &test.query_params {
-            let mut processed_params = HashMap::new();
-            for (key, value) in query_params {
-                processed_params.insert(key, replace_variables(value, variables));
-            }
-            request_builder = request_builder.query(&processed_params);
+        if let Some(body) = request.body {
+            builder = builder.json(&body);
         }
 
-        // Add authentication if specified
-        if let Some(auth_method) = &test_suite.config.auth_method {
-            if let Some(auth_token) = &test_suite.config.auth_token {
-                let token = replace_variables(auth_token, variables);
-                match auth_method.to_lowercase().as_str() {
-                    "bearer" => {
-                        request_builder =
-                            request_builder.header("Authorization", format!("Bearer {}", token));
-                    }
-                    "basic" => {
-                        request_builder =
-                            request_builder.header("Authorization", format!("Basic {}", token));
-                    }
-                    _ => {}
-                }
-            }
-        }
+        let response = builder.send().await.map_err(|e| e.to_string())?;
 
-        // Add body if present
-        if let Some(body) = &test.body {
-            let body_str = serde_json::to_string(body).unwrap_or_default();
-            let processed_body: Value =
-                serde_json::from_str(&replace_variables(&body_str, variables))
-                    .unwrap_or(Value::Null);
-            request_builder = request_builder.json(&processed_body);
-        }
+        let status = response.status().as_u16();
+        let headers: HashMap<String, String> = response
+            .headers()
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.to_str().unwrap_or("").to_string()))
+            .collect();
 
-        request_builder.send().await
+        let body = response.json().await.map_err(|e| e.to_string())?;
+
+        Ok((status, body, headers))
     }
-}
-
-// Helper function to replace variables in strings
-pub fn replace_variables(input: &str, variables: &HashMap<String, String>) -> String {
-    let mut result = input.to_string();
-    for (key, value) in variables {
-        let pattern = format!("{{{{{}}}}}", key);
-        result = result.replace(&pattern, value);
-    }
-    result
 }

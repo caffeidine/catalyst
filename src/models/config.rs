@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use std::collections::HashMap;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Config {
     pub base_url: String,
     pub auth_method: Option<String>,
@@ -10,7 +10,7 @@ pub struct Config {
     pub env: Option<EnvConfig>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct EnvConfig {
     pub store: Option<HashMap<String, String>>,
 }
