@@ -1,0 +1,1025 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Catalyst a lightweight API testing tool</title>
+        <meta name="robots" content="noindex">
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Catalyst a lightweight API testing tool</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="introduction-to-catalyst"><a class="header" href="#introduction-to-catalyst">Introduction to Catalyst</a></h1>
+<p><strong>Catalyst</strong> is a lightweight API testing tool. It allows you to define and execute HTTP API tests through a TOML configuration file.</p>
+<h2 id="how-catalyst-works"><a class="header" href="#how-catalyst-works">How Catalyst Works</a></h2>
+<p>Catalyst operates in a simple way:</p>
+<ol>
+<li>You define your tests in a <code>.catalyst/tests.toml</code> file</li>
+<li>You run the tests using the command-line interface</li>
+<li>Catalyst executes the tests and reports the results</li>
+</ol>
+<h2 id="current-features"><a class="header" href="#current-features">Current Features</a></h2>
+<p>Catalyst currently supports:</p>
+<ul>
+<li><strong>HTTP Methods</strong>: GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS</li>
+<li><strong>Request Configuration</strong>: Headers, query parameters, and JSON bodies</li>
+<li><strong>Response Validation</strong>: Status code verification</li>
+<li><strong>Variable Storage</strong>: Extract values from JSON responses using path notation</li>
+<li><strong>Cookie Extraction</strong>: Store cookies from responses for use in subsequent requests</li>
+<li><strong>Variable Substitution</strong>: Use stored variables in endpoints, headers, and request bodies</li>
+<li><strong>Test Filtering</strong>: Run specific tests by name</li>
+</ul>
+<h2 id="command-line-interface"><a class="header" href="#command-line-interface">Command-Line Interface</a></h2>
+<p>Catalyst provides a simple command-line interface with three main commands:</p>
+<ul>
+<li><code>catalyst run</code> - Execute tests</li>
+<li><code>catalyst validate</code> - Validate the test configuration file</li>
+<li><code>catalyst list</code> - List available tests</li>
+</ul>
+<h2 id="configuration-file"><a class="header" href="#configuration-file">Configuration File</a></h2>
+<p>The configuration file (<code>.catalyst/tests.toml</code>) consists of:</p>
+<ul>
+<li>A global <code>[config]</code> section with settings that apply to all tests</li>
+<li>Multiple <code>[[tests]]</code> sections, each defining a single test</li>
+</ul>
+<p>In the following sections, we'll guide you through installing Catalyst and creating your first test configuration.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="installation"><a class="header" href="#installation">Installation</a></h1>
+<p>There are several ways to install Catalyst on your system.</p>
+<h2 id="using-cargo"><a class="header" href="#using-cargo">Using Cargo</a></h2>
+<p>The recommended way to install Catalyst is through Cargo, Rust's package manager. If you already have Rust installed, you can install Catalyst with:</p>
+<pre><code class="language-bash">cargo install catalyst
+</code></pre>
+<p>This will download, compile, and install the latest version of Catalyst from crates.io.</p>
+<h2 id="building-from-source"><a class="header" href="#building-from-source">Building from Source</a></h2>
+<p>If you prefer to build Catalyst from source, or if you want to use the latest development version, you can clone the repository and build it yourself:</p>
+<pre><code class="language-bash"># Clone the repository
+git clone https://github.com/caffeidine/catalyst.git
+cd catalyst
+
+# Build and install
+cargo install --path .
+</code></pre>
+<h2 id="verifying-installation"><a class="header" href="#verifying-installation">Verifying Installation</a></h2>
+<p>To verify that Catalyst has been installed correctly, run:</p>
+<pre><code class="language-bash">catalyst --version
+</code></pre>
+<p>You should see output showing the version number of Catalyst.</p>
+<h2 id="next-steps"><a class="header" href="#next-steps">Next Steps</a></h2>
+<p>Now that you have Catalyst installed, you can proceed to the <a href="./getting_started.html">Getting Started</a> section to learn how to create and run your first API tests.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="getting-started-with-catalyst"><a class="header" href="#getting-started-with-catalyst">Getting Started with Catalyst</a></h1>
+<p>This section will guide you through the basics of using Catalyst to test your APIs. We'll cover how to create a simple test configuration file, run your tests, and interpret the results.</p>
+<h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
+<p>Using Catalyst involves three main steps:</p>
+<ol>
+<li><strong>Create a test configuration file</strong> (<code>.catalyst/tests.toml</code>) that defines your API tests</li>
+<li><strong>Run the tests</strong> using the Catalyst command-line interface</li>
+<li><strong>Review the results</strong> to identify any issues with your API</li>
+</ol>
+<h2 id="directory-structure"><a class="header" href="#directory-structure">Directory Structure</a></h2>
+<p>Catalyst expects your test configuration to be in a <code>.catalyst</code> directory in your project root:</p>
+<pre><code>your-project/
+├── .catalyst/
+│   └── tests.toml    # Your test configuration file
+└── ...
+</code></pre>
+<h2 id="basic-example"><a class="header" href="#basic-example">Basic Example</a></h2>
+<p>Here's a simple example of a test configuration file that tests a REST API:</p>
+<pre><code class="language-toml">[config]
+base_url = "https://api.example.com"
+default_headers = { "Content-Type" = "application/json" }
+
+[[tests]]
+name = "Get Users"
+method = "GET"
+endpoint = "/users"
+expected_status = 200
+
+[[tests]]
+name = "Create User"
+method = "POST"
+endpoint = "/users"
+body = { "name" = "John Doe", "email" = "john@example.com" }
+expected_status = 201
+</code></pre>
+<p>This configuration defines two tests:</p>
+<ol>
+<li>A GET request to <code>/users</code> that should return a 200 status code</li>
+<li>A POST request to <code>/users</code> with a JSON body that should return a 201 status code</li>
+</ol>
+<h2 id="next-steps-1"><a class="header" href="#next-steps-1">Next Steps</a></h2>
+<p>In the following sections, we'll explore:</p>
+<ul>
+<li><a href="./getting_started/first_test.html">Creating Your First Test</a> - A step-by-step guide to creating your first test</li>
+<li><a href="./getting_started/running_tests.html">Running Tests</a> - How to run your tests and interpret the results</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="creating-your-first-test"><a class="header" href="#creating-your-first-test">Creating Your First Test</a></h1>
+<p>Creating your first test with Catalyst is straightforward. This guide will walk you through the process step by step.</p>
+<h2 id="1-create-the-directory-structure"><a class="header" href="#1-create-the-directory-structure">1. Create the Directory Structure</a></h2>
+<p>First, create a <code>.catalyst</code> directory in your project root:</p>
+<pre><code class="language-bash">mkdir -p .catalyst
+</code></pre>
+<h2 id="2-create-the-test-file"><a class="header" href="#2-create-the-test-file">2. Create the Test File</a></h2>
+<p>Create a file named <code>tests.toml</code> inside the <code>.catalyst</code> directory:</p>
+<pre><code class="language-bash">touch .catalyst/tests.toml
+</code></pre>
+<h2 id="3-define-the-global-configuration"><a class="header" href="#3-define-the-global-configuration">3. Define the Global Configuration</a></h2>
+<p>Open the <code>tests.toml</code> file and add the global configuration:</p>
+<pre><code class="language-toml">[config]
+base_url = "https://api.example.com"  # Replace with your API base URL
+default_headers = { "Content-Type" = "application/json" }
+</code></pre>
+<h2 id="4-add-your-first-test"><a class="header" href="#4-add-your-first-test">4. Add Your First Test</a></h2>
+<p>Add a test definition to the file:</p>
+<pre><code class="language-toml">[[tests]]
+name = "Simple GET Request"
+method = "GET"
+endpoint = "/status"
+expected_status = 200
+</code></pre>
+<p>This test will make a GET request to <code>https://api.example.com/status</code> and expect a 200 status code in response.</p>
+<h2 id="5-complete-example"><a class="header" href="#5-complete-example">5. Complete Example</a></h2>
+<p>Your complete <code>tests.toml</code> file should look like this:</p>
+<pre><code class="language-toml">[config]
+base_url = "https://api.example.com"
+default_headers = { "Content-Type" = "application/json" }
+
+[[tests]]
+name = "Simple GET Request"
+method = "GET"
+endpoint = "/status"
+expected_status = 200
+</code></pre>
+<h2 id="next-steps-2"><a class="header" href="#next-steps-2">Next Steps</a></h2>
+<p>Now that you've created your first test, learn how to <a href="getting_started/./running_tests.html">run it</a>.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="running-tests"><a class="header" href="#running-tests">Running Tests</a></h1>
+<p>Once you've created your test configuration file, you can run your tests using the Catalyst command-line interface. This guide explains how to run tests and interpret the results.</p>
+<h2 id="basic-test-execution"><a class="header" href="#basic-test-execution">Basic Test Execution</a></h2>
+<p>To run all tests defined in your <code>.catalyst/tests.toml</code> file, navigate to your project directory and run:</p>
+<pre><code class="language-bash">catalyst run
+</code></pre>
+<p>This will execute all tests in the order they are defined in the file.</p>
+<h2 id="cli-options"><a class="header" href="#cli-options">CLI Options</a></h2>
+<p>Catalyst provides several command-line options to customize test execution:</p>
+<h3 id="specifying-a-custom-test-file"><a class="header" href="#specifying-a-custom-test-file">Specifying a Custom Test File</a></h3>
+<p>By default, Catalyst looks for tests in <code>.catalyst/tests.toml</code> in your current directory. You can specify a different file using the <code>--file</code> option:</p>
+<pre><code class="language-bash">catalyst run --file /path/to/custom/tests.toml
+</code></pre>
+<h3 id="filtering-tests"><a class="header" href="#filtering-tests">Filtering Tests</a></h3>
+<p>You can run specific tests by using the <code>--filter</code> option:</p>
+<pre><code class="language-bash">catalyst run --filter "Login"
+</code></pre>
+<p>This will only run tests whose names contain the string "Login".</p>
+<h3 id="verbose-output"><a class="header" href="#verbose-output">Verbose Output</a></h3>
+<p>For more detailed output, use the <code>--verbose</code> (or <code>-v</code>) flag:</p>
+<pre><code class="language-bash">catalyst run --verbose
+</code></pre>
+<p>This will show additional information such as response bodies and headers.</p>
+<h3 id="disabling-colored-output"><a class="header" href="#disabling-colored-output">Disabling Colored Output</a></h3>
+<p>If you're running tests in an environment that doesn't support colored output, you can disable it:</p>
+<pre><code class="language-bash">catalyst run --disable-color
+</code></pre>
+<h3 id="complete-cli-reference"><a class="header" href="#complete-cli-reference">Complete CLI Reference</a></h3>
+<p>Here's a complete list of available commands and options:</p>
+<pre><code>CATALYST COMMANDS:
+  run       Run API tests
+    Options:
+      -f, --filter &lt;FILTER&gt;    Filter by test name
+      --disable-color          Disable colored output
+      -v, --verbose            Enable verbose output
+      --file &lt;FILE&gt;            Specify a custom test file path
+
+  validate  Validate tests configuration
+    Options:
+      --file &lt;FILE&gt;            Specify a custom test file path
+
+  list      List available tests
+    Options:
+      -v, --verbose            Enable detailed test information
+      --file &lt;FILE&gt;            Specify a custom test file path
+
+  help      Print this message or the help of the given subcommand(s)
+</code></pre>
+<h2 id="understanding-test-results"><a class="header" href="#understanding-test-results">Understanding Test Results</a></h2>
+<p>Catalyst provides clear feedback about test execution:</p>
+<ul>
+<li><strong>[PASS]</strong> - The test succeeded (actual status code matches expected status code)</li>
+<li><strong>[FAIL]</strong> - The test failed (actual status code differs from expected status code)</li>
+</ul>
+<p>At the end of the test run, Catalyst will display a summary showing the total number of tests, how many passed, and how many failed.</p>
+<h2 id="example-output"><a class="header" href="#example-output">Example Output</a></h2>
+<pre><code>Running API tests...
+[PASS] Simple GET Request      (200 Success)
+[PASS] Create User             (201 Success)
+[FAIL] Update User             (404 Not Found) (expected 200)
+
+Failed tests:
+- Update User
+
+Test Summary:
+Total: 3, Passed: 2, Failed: 1
+</code></pre>
+<h2 id="next-steps-3"><a class="header" href="#next-steps-3">Next Steps</a></h2>
+<p>Now that you know how to run tests, you can explore more configuration options in the <a href="getting_started/../configuration.html">Configuration</a> section.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="configuration"><a class="header" href="#configuration">Configuration</a></h1>
+<p>Catalyst uses a TOML configuration file to define your API tests. This section explains the structure and options available in the configuration file.</p>
+<h2 id="configuration-file-location"><a class="header" href="#configuration-file-location">Configuration File Location</a></h2>
+<p>By default, Catalyst looks for a configuration file at <code>.catalyst/tests.toml</code> in your project directory.</p>
+<h2 id="configuration-structure"><a class="header" href="#configuration-structure">Configuration Structure</a></h2>
+<p>The configuration file has two main sections:</p>
+<ol>
+<li><strong>Global Configuration</strong> - Settings that apply to all tests</li>
+<li><strong>Test Definitions</strong> - Individual test cases</li>
+</ol>
+<h2 id="global-configuration"><a class="header" href="#global-configuration">Global Configuration</a></h2>
+<p>The global configuration is defined in a <code>[config]</code> section at the top of the file:</p>
+<pre><code class="language-toml">[config]
+base_url = "https://api.example.com"
+auth_method = "Bearer"  # Optional
+auth_token = "your-token"  # Optional
+default_headers = { "Content-Type" = "application/json" }  # Optional
+</code></pre>
+<h3 id="available-options"><a class="header" href="#available-options">Available Options</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Option</th><th>Description</th><th>Required</th></tr></thead><tbody>
+<tr><td><code>base_url</code></td><td>Base URL for all API requests</td><td>Yes</td></tr>
+<tr><td><code>auth_method</code></td><td>Authentication method ("Bearer", "Basic", "Cookie")</td><td>No</td></tr>
+<tr><td><code>auth_token</code></td><td>Authentication token (used with auth_method)</td><td>No</td></tr>
+<tr><td><code>default_headers</code></td><td>Headers to include in all requests</td><td>No</td></tr>
+</tbody></table>
+</div>
+<h2 id="test-definitions"><a class="header" href="#test-definitions">Test Definitions</a></h2>
+<p>Test definitions are specified using <code>[[tests]]</code> sections:</p>
+<pre><code class="language-toml">[[tests]]
+name = "Get Users"
+method = "GET"
+endpoint = "/users"
+query_params = { "limit" = "10" }  # Optional
+headers = { "X-Custom-Header" = "value" }  # Optional
+body = { "key" = "value" }  # Optional
+expected_status = 200
+expected_body = { "success" = true }  # Optional
+expected_headers = [["Content-Type", "application/json"]]  # Optional
+store = { "$.token" = "auth_token" }  # Optional
+get_cookie = { "session" = "session_cookie" }  # Optional
+max_response_time = 500  # Maximum response time in milliseconds (Optional)
+
+# Advanced assertions (Optional)
+assertions = [
+  # Exact match (same as expected_body)
+  { type = "Exact", value = { "success" = true } },
+
+  # Partial match - checks if response contains these fields
+  { type = "Contains", value = { "data" = { "users" = [] } } },
+
+  # Regex match on the entire response body
+  { type = "Regex", value = "\\{.*\"success\"\\s*:\\s*true.*\\}" },
+
+  # Regex match on a specific JSON path
+  { type = "PathRegex", value = ["$.user.email", ".*@example\\.com"] }
+]
+</code></pre>
+<h3 id="available-test-options"><a class="header" href="#available-test-options">Available Test Options</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Option</th><th>Description</th><th>Required</th></tr></thead><tbody>
+<tr><td><code>name</code></td><td>Name of the test</td><td>Yes</td></tr>
+<tr><td><code>method</code></td><td>HTTP method (GET, POST, PUT, DELETE, etc.)</td><td>Yes</td></tr>
+<tr><td><code>endpoint</code></td><td>API endpoint (will be appended to base_url)</td><td>Yes</td></tr>
+<tr><td><code>query_params</code></td><td>Query parameters to include in the URL</td><td>No</td></tr>
+<tr><td><code>headers</code></td><td>Headers specific to this test</td><td>No</td></tr>
+<tr><td><code>body</code></td><td>Request body (for POST, PUT, etc.)</td><td>No</td></tr>
+<tr><td><code>expected_status</code></td><td>Expected HTTP status code</td><td>Yes</td></tr>
+<tr><td><code>expected_body</code></td><td>Expected response body (exact match)</td><td>No</td></tr>
+<tr><td><code>assertions</code></td><td>Advanced assertions for response validation</td><td>No</td></tr>
+<tr><td><code>expected_headers</code></td><td>Expected response headers</td><td>No</td></tr>
+<tr><td><code>store</code></td><td>JSON paths to extract and store as variables</td><td>No</td></tr>
+<tr><td><code>get_cookie</code></td><td>Cookies to extract and store as variables</td><td>No</td></tr>
+<tr><td><code>max_response_time</code></td><td>Maximum allowed response time in milliseconds</td><td>No</td></tr>
+</tbody></table>
+</div>
+<h2 id="advanced-assertions"><a class="header" href="#advanced-assertions">Advanced Assertions</a></h2>
+<p>Catalyst 0.2 introduces advanced assertions for more flexible response validation. You can use the <code>assertions</code> field to define multiple validation rules for a single test.</p>
+<h3 id="types-of-assertions"><a class="header" href="#types-of-assertions">Types of Assertions</a></h3>
+<h4 id="exact-match"><a class="header" href="#exact-match">Exact Match</a></h4>
+<p>Validates that the response body exactly matches the expected value. This is equivalent to using <code>expected_body</code>.</p>
+<pre><code class="language-toml">assertions = [
+  { type = "Exact", value = { "success" = true, "data" = { "id" = 1 } } }
+]
+</code></pre>
+<h4 id="contains-match"><a class="header" href="#contains-match">Contains Match</a></h4>
+<p>Validates that the response body contains all the fields specified in the expected value, but may contain additional fields.</p>
+<pre><code class="language-toml">assertions = [
+  { type = "Contains", value = { "success" = true } }
+]
+</code></pre>
+<p>This will pass if the response contains <code>{"success": true, "data": {...}}</code> or any other JSON that includes the <code>success</code> field with a value of <code>true</code>.</p>
+<h4 id="regex-match"><a class="header" href="#regex-match">Regex Match</a></h4>
+<p>Validates that the string representation of the response body matches the specified regular expression pattern.</p>
+<pre><code class="language-toml">assertions = [
+  { type = "Regex", value = "\\{.*\"success\"\\s*:\\s*true.*\\}" }
+]
+</code></pre>
+<h4 id="path-regex-match"><a class="header" href="#path-regex-match">Path Regex Match</a></h4>
+<p>Validates that a specific value in the response body, identified by a JSON path, matches the specified regular expression pattern.</p>
+<pre><code class="language-toml">assertions = [
+  { type = "PathRegex", value = ["$.user.email", ".*@example\\.com"] }
+]
+</code></pre>
+<p>This will pass if the value at <code>$.user.email</code> in the response matches the pattern <code>.*@example\.com</code>.</p>
+<h3 id="combining-assertions"><a class="header" href="#combining-assertions">Combining Assertions</a></h3>
+<p>You can combine multiple assertions for a single test:</p>
+<pre><code class="language-toml">assertions = [
+  { type = "Contains", value = { "success" = true } },
+  { type = "PathRegex", value = ["$.data.id", "\\d+"] }
+]
+</code></pre>
+<p>This test will pass only if both assertions are satisfied.</p>
+<h2 id="response-time-validation"><a class="header" href="#response-time-validation">Response Time Validation</a></h2>
+<p>Catalyst 0.2 introduces response time validation and tracking. This feature allows you to:</p>
+<ol>
+<li>Set maximum allowed response times for your API endpoints</li>
+<li>Access and use the measured response times in subsequent tests</li>
+</ol>
+<h3 id="setting-maximum-response-time"><a class="header" href="#setting-maximum-response-time">Setting Maximum Response Time</a></h3>
+<p>You can use the <code>max_response_time</code> field to specify the maximum allowed response time in milliseconds:</p>
+<pre><code class="language-toml">[[tests]]
+name = "Fast API Response"
+method = "GET"
+endpoint = "/api/fast-endpoint"
+expected_status = 200
+max_response_time = 100  # Must respond within 100ms
+</code></pre>
+<p>If the API response takes longer than the specified time, the test will fail with a message indicating that the response time exceeded the maximum allowed time.</p>
+<h3 id="automatic-response-time-tracking"><a class="header" href="#automatic-response-time-tracking">Automatic Response Time Tracking</a></h3>
+<p><strong>Important:</strong> After each test execution, Catalyst automatically measures and stores the response time. This value is stored in a special variable named <code>response_time_ms</code> that becomes available to all subsequent tests.</p>
+<p>This happens automatically for every test, whether or not you've specified a <code>max_response_time</code> value.</p>
+<h3 id="using-the-response-time-variable"><a class="header" href="#using-the-response-time-variable">Using the Response Time Variable</a></h3>
+<p>You can reference the stored response time using the standard variable syntax <code>{{response_time_ms}}</code> in any subsequent test:</p>
+<pre><code class="language-toml"># First test - response time will be measured
+[[tests]]
+name = "Get User Profile"
+method = "GET"
+endpoint = "/users/profile"
+expected_status = 200
+
+# Second test - uses the response time from the first test
+[[tests]]
+name = "Log Response Time"
+method = "POST"
+endpoint = "/metrics/log"
+body = {
+  "endpoint" = "/users/profile",
+  "response_time_ms" = "{{response_time_ms}}",
+  "timestamp" = "{{current_timestamp}}"
+}
+expected_status = 200
+</code></pre>
+<p>This feature is particularly useful for:</p>
+<ul>
+<li>Performance logging and monitoring</li>
+<li>Creating tests that validate performance metrics</li>
+<li>Debugging performance issues across different API endpoints</li>
+</ul>
+<h2 id="next-steps-4"><a class="header" href="#next-steps-4">Next Steps</a></h2>
+<p>For more detailed information about specific aspects of configuration, see:</p>
+<ul>
+<li><a href="./configuration/test_file_structure.html">Test File Structure</a></li>
+<li><a href="./configuration/security.html">Security</a></li>
+<li><a href="./reference/references.html">Complete Reference</a> - Comprehensive reference with examples for all features</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="test-file-structure"><a class="header" href="#test-file-structure">Test File Structure</a></h1>
+<p>Catalyst uses a TOML configuration file to define your API tests. This file should be located at <code>.catalyst/tests.toml</code> in your project directory.</p>
+<h2 id="basic-structure"><a class="header" href="#basic-structure">Basic Structure</a></h2>
+<p>The test file has two main sections:</p>
+<ol>
+<li><strong>Global configuration</strong> (<code>[config]</code>) - Contains settings that apply to all tests</li>
+<li><strong>Test definitions</strong> (<code>[[tests]]</code>) - Contains individual test cases</li>
+</ol>
+<p>Here's a simple example:</p>
+<pre><code class="language-toml"># Global settings
+[config]
+base_url = "https://api.example.com"
+default_headers = { "Content-Type" = "application/json" }
+
+# Test definitions
+[[tests]]
+name = "Get Users"
+method = "GET"
+endpoint = "/users"
+expected_status = 200
+
+[[tests]]
+name = "Create User"
+method = "POST"
+endpoint = "/users"
+body = { "name" = "John Doe", "email" = "john@example.com" }
+expected_status = 201
+</code></pre>
+<h2 id="file-organization"><a class="header" href="#file-organization">File Organization</a></h2>
+<p>You can organize your tests in any order within the file. Catalyst will execute the tests in the order they are defined, which is important when tests depend on each other (for example, when one test stores a variable that another test uses).</p>
+<h2 id="comments"><a class="header" href="#comments">Comments</a></h2>
+<p>You can add comments to your test file using the <code>#</code> character:</p>
+<pre><code class="language-toml"># This is a comment
+[config]
+base_url = "https://api.example.com"  # This is also a comment
+</code></pre>
+<p>Comments are useful for documenting your tests and explaining their purpose or any special considerations.</p>
+<h2 id="multiple-test-files"><a class="header" href="#multiple-test-files">Multiple Test Files</a></h2>
+<p>Currently, Catalyst supports a single test file (<code>.catalyst/tests.toml</code>). If you need to organize your tests into multiple files, you might consider using symbolic links or a build process that combines multiple TOML files into a single test file.</p>
+<h2 id="next-steps-5"><a class="header" href="#next-steps-5">Next Steps</a></h2>
+<p>For more information, see:</p>
+<ul>
+<li><a href="configuration/./security.html">Security</a> - Details on authentication and security configuration</li>
+<li><a href="configuration/../reference/references.html">Complete Reference</a> - Comprehensive reference with examples for all features, including advanced assertions and response time validation</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="security-configuration"><a class="header" href="#security-configuration">Security Configuration</a></h1>
+<p>This section explains how to configure authentication and security-related aspects when testing APIs with Catalyst.</p>
+<h2 id="authentication-methods"><a class="header" href="#authentication-methods">Authentication Methods</a></h2>
+<p>Catalyst supports several authentication methods that can be configured in the global configuration section or per test.</p>
+<h3 id="cookie-based-authentication"><a class="header" href="#cookie-based-authentication">Cookie-based Authentication</a></h3>
+<p>For cookie-based authentication, you can use the <code>auth_method</code> set to "Cookie":</p>
+<pre><code class="language-toml">[config]
+base_url = "https://api.example.com"
+auth_method = "Cookie"
+default_headers = { "Content-Type" = "application/json" }
+</code></pre>
+<p>The typical workflow for cookie-based authentication is:</p>
+<ol>
+<li>Perform a login request</li>
+<li>Extract the session cookie</li>
+<li>Use the cookie in subsequent requests</li>
+</ol>
+<p>Example:</p>
+<pre><code class="language-toml">[[tests]]
+name = "Login"
+method = "POST"
+endpoint = "/auth/login"
+body = { "username" = "test", "password" = "password" }
+expected_status = 200
+get_cookie = { "session_id" = "session_cookie" }
+
+[[tests]]
+name = "Access Protected Resource"
+method = "GET"
+endpoint = "/protected"
+headers = { "Cookie" = "session_id={{session_cookie}}" }
+expected_status = 200
+</code></pre>
+<h3 id="bearer-token-authentication"><a class="header" href="#bearer-token-authentication">Bearer Token Authentication</a></h3>
+<p>To use Bearer token authentication:</p>
+<pre><code class="language-toml">[config]
+base_url = "https://api.example.com"
+auth_method = "Bearer"
+auth_token = "your-jwt-token"
+</code></pre>
+<p>This will add an <code>Authorization: Bearer your-jwt-token</code> header to all requests.</p>
+<h2 id="handling-api-keys"><a class="header" href="#handling-api-keys">Handling API Keys</a></h2>
+<p>You can include API keys in headers or query parameters:</p>
+<pre><code class="language-toml">[[tests]]
+name = "API Key in Header"
+method = "GET"
+endpoint = "/protected"
+headers = { "X-API-Key" = "your-api-key" }
+expected_status = 200
+
+[[tests]]
+name = "API Key in Query Parameter"
+method = "GET"
+endpoint = "/protected"
+query_params = { "api_key" = "your-api-key" }
+expected_status = 200
+</code></pre>
+<h2 id="chaining-authentication"><a class="header" href="#chaining-authentication">Chaining Authentication</a></h2>
+<p>You can chain authentication by extracting tokens from responses:</p>
+<pre><code class="language-toml">[[tests]]
+name = "Create User Token"
+method = "POST"
+endpoint = "/user/tokens"
+headers = { "Cookie" = "{{session_cookie}}" }
+expected_status = 200
+store = { "data.token" = "token" }
+
+[[tests]]
+name = "Access Protected Resource"
+method = "GET"
+endpoint = "/protected"
+headers = { "x-api-token" = "{{token}}" }
+expected_status = 200
+</code></pre>
+<h2 id="next-steps-6"><a class="header" href="#next-steps-6">Next Steps</a></h2>
+<p>For more information about test configuration and advanced features, see:</p>
+<ul>
+<li><a href="configuration/./test_file_structure.html">Test File Structure</a> - Details on the overall structure of test files</li>
+<li><a href="configuration/../reference/references.html">Complete Reference</a> - Comprehensive reference with examples for all features, including advanced assertions and response time validation</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="test-reference"><a class="header" href="#test-reference">Test Reference</a></h1>
+<p>This page serves as a technical reference for creating tests with Catalyst.</p>
+<h2 id="toml-syntax-guide"><a class="header" href="#toml-syntax-guide">TOML Syntax Guide</a></h2>
+<p>Catalyst uses TOML for test configuration. Understanding the TOML syntax is important for writing correct and maintainable tests.</p>
+<h3 id="tables-vs-arrays-of-tables"><a class="header" href="#tables-vs-arrays-of-tables">Tables vs Arrays of Tables</a></h3>
+<p>TOML has two main ways to define structures:</p>
+<ol>
+<li><strong>Tables <code>[table]</code></strong>: Define a single named table (object)</li>
+<li><strong>Arrays of Tables <code>[[table]]</code></strong>: Define an element in an array of tables (array of objects)</li>
+</ol>
+<h4 id="when-to-use-each-syntax"><a class="header" href="#when-to-use-each-syntax">When to Use Each Syntax</a></h4>
+<ul>
+<li>Use <code>[[tests]]</code> for each test because a test file can contain multiple tests</li>
+<li>Use <code>[tests.body]</code>, <code>[tests.headers]</code>, etc. for single objects within a test</li>
+<li>Use <code>[[tests.assertions]]</code> for assertions because a test can have multiple assertions</li>
+<li>Use <code>[tests.assertions.value]</code> for the value of a specific assertion</li>
+</ul>
+<h4 id="example"><a class="header" href="#example">Example</a></h4>
+<pre><code class="language-toml">[[tests]]                # First test (element in an array)
+name = "Example Test"
+
+[tests.body]            # Request body (single object)
+name = "Test User"
+
+[[tests.assertions]]     # First assertion (element in an array)
+type = "Contains"
+
+[tests.assertions.value] # Value of this assertion (single object)
+id = 123
+</code></pre>
+<p>This distinction is important for correctly representing data structures with different cardinalities in your tests.</p>
+<h2 id="basic-structure-1"><a class="header" href="#basic-structure-1">Basic Structure</a></h2>
+<pre><code class="language-toml">[config]
+base_url = "https://api.example.com"
+default_headers = { "Content-Type" = "application/json" }
+
+[[tests]]
+name = "Test Name"
+method = "GET"
+endpoint = "/path"
+expected_status = 200
+</code></pre>
+<h2 id="global-configuration-options"><a class="header" href="#global-configuration-options">Global Configuration Options</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Option</th><th>Description</th><th>Required</th><th>Example</th></tr></thead><tbody>
+<tr><td><code>base_url</code></td><td>Base URL for all API requests</td><td>Yes</td><td><code>"https://api.example.com"</code></td></tr>
+<tr><td><code>default_headers</code></td><td>Headers to include in all requests</td><td>No</td><td><code>{ "Content-Type" = "application/json" }</code></td></tr>
+<tr><td><code>auth_method</code></td><td>Authentication method</td><td>No</td><td><code>"Bearer"</code> (options: "Bearer", "Basic", "Cookie")</td></tr>
+<tr><td><code>auth_token</code></td><td>Authentication token</td><td>No</td><td><code>"your-token-here"</code></td></tr>
+</tbody></table>
+</div>
+<pre><code class="language-toml">[config]
+base_url = "https://api.example.com"
+default_headers = {
+  "Content-Type" = "application/json",
+  "Accept" = "application/json"
+}
+auth_method = "Bearer"
+auth_token = "your-token-here"
+</code></pre>
+<h2 id="test-definition-options"><a class="header" href="#test-definition-options">Test Definition Options</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Option</th><th>Description</th><th>Required</th><th>Example</th></tr></thead><tbody>
+<tr><td><code>name</code></td><td>Name of the test</td><td>Yes</td><td><code>"Get User Profile"</code></td></tr>
+<tr><td><code>method</code></td><td>HTTP method</td><td>Yes</td><td><code>"GET"</code> (options: GET, POST, PUT, DELETE, PATCH, etc.)</td></tr>
+<tr><td><code>endpoint</code></td><td>API endpoint (appended to base_url)</td><td>Yes</td><td><code>"/users/1"</code></td></tr>
+<tr><td><code>query_params</code></td><td>Query parameters for the URL</td><td>No</td><td><code>{ "page" = "1", "limit" = "10" }</code></td></tr>
+<tr><td><code>headers</code></td><td>Headers specific to this test</td><td>No</td><td><code>{ "X-Custom-Header" = "value" }</code></td></tr>
+<tr><td><code>body</code></td><td>Request body (for POST, PUT, etc.)</td><td>No</td><td><code>{ "name" = "John Doe" }</code></td></tr>
+<tr><td><code>expected_status</code></td><td>Expected HTTP status code</td><td>Yes</td><td><code>200</code></td></tr>
+<tr><td><code>expected_body</code></td><td>Expected response body (exact match)</td><td>No</td><td><code>{ "success" = true }</code></td></tr>
+<tr><td><code>assertions</code></td><td>Advanced assertions for response validation</td><td>No</td><td>See Assertions section</td></tr>
+<tr><td><code>expected_headers</code></td><td>Expected response headers</td><td>No</td><td><code>[["Content-Type", "application/json"]]</code></td></tr>
+<tr><td><code>store</code></td><td>JSON paths to extract and store as variables</td><td>No</td><td><code>{ "$.token" = "auth_token" }</code></td></tr>
+<tr><td><code>get_cookie</code></td><td>Cookies to extract and store as variables</td><td>No</td><td><code>{ "session" = "session_id" }</code></td></tr>
+<tr><td><code>max_response_time</code></td><td>Maximum allowed response time in milliseconds</td><td>No</td><td><code>500</code></td></tr>
+</tbody></table>
+</div>
+<pre><code class="language-toml">[[tests]]
+name = "Create User"
+method = "POST"
+endpoint = "/users"
+query_params = { "source" = "api" }
+headers = { "X-Custom-Header" = "value" }
+body = {
+  "name" = "John Doe",
+  "email" = "john@example.com",
+  "roles" = ["user", "admin"]
+}
+expected_status = 201
+expected_body = { "success" = true }
+expected_headers = [["Content-Type", "application/json"]]
+max_response_time = 500
+</code></pre>
+<h2 id="response-validation"><a class="header" href="#response-validation">Response Validation</a></h2>
+<h3 id="using-expected_body-vs-assertions"><a class="header" href="#using-expected_body-vs-assertions">Using expected_body vs. assertions</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Validation Method</th><th>Description</th><th>Use Case</th><th>Limitations</th></tr></thead><tbody>
+<tr><td><code>expected_body</code></td><td>Exact match validation</td><td>When you need to validate the entire response structure exactly</td><td>Cannot perform partial validations or regex matches</td></tr>
+<tr><td><code>assertions</code></td><td>Advanced validation with multiple methods</td><td>When you need more flexible validation options</td><td>Requires more configuration</td></tr>
+</tbody></table>
+</div>
+<h4 id="expected_body-example"><a class="header" href="#expected_body-example">expected_body Example</a></h4>
+<pre><code class="language-toml"># Using expected_body for exact match validation
+[[tests]]
+name = "Get User"
+method = "GET"
+endpoint = "/users/1"
+expected_status = 200
+expected_body = {
+  "id" = 1,
+  "name" = "John Doe",
+  "email" = "john@example.com",
+  "created_at" = "2023-01-01T00:00:00Z"
+}
+</code></pre>
+<h4 id="assertions-example"><a class="header" href="#assertions-example">assertions Example</a></h4>
+<pre><code class="language-toml"># Using assertions for more flexible validation
+[[tests]]
+name = "Get User with Assertions"
+method = "GET"
+endpoint = "/users/1"
+expected_status = 200
+
+# Assertions using table array syntax for better readability
+[[tests.assertions]]
+type = "Contains"
+value = { "id" = 1, "name" = "John Doe" }
+
+[[tests.assertions]]
+type = "PathRegex"
+value = ["$.email", "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"]
+</code></pre>
+<h2 id="assertion-types"><a class="header" href="#assertion-types">Assertion Types</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Type</th><th>Description</th><th>Example</th><th>When to Use</th></tr></thead><tbody>
+<tr><td><code>Exact</code></td><td>Validates that the response exactly matches the expected value</td><td><code>{ type = "Exact", value = { "id" = 1 } }</code></td><td>When you need to validate the entire response structure</td></tr>
+<tr><td><code>Contains</code></td><td>Validates that the response contains all specified fields</td><td><code>{ type = "Contains", value = { "success" = true } }</code></td><td>When you only care about specific fields, not the entire response</td></tr>
+<tr><td><code>Regex</code></td><td>Validates the response against a regex pattern</td><td><code>{ type = "Regex", value = ".*\"id\":\\s*1.*" }</code></td><td>When you need to validate the entire response with a pattern</td></tr>
+<tr><td><code>PathRegex</code></td><td>Validates a specific JSON path against a regex pattern</td><td><code>{ type = "PathRegex", value = ["$.email", ".*@example\\.com"] }</code></td><td>When you need to validate a specific field with a pattern</td></tr>
+</tbody></table>
+</div>
+<h3 id="assertion-examples"><a class="header" href="#assertion-examples">Assertion Examples</a></h3>
+<pre><code class="language-toml">[[tests]]
+name = "Advanced Assertions Example"
+method = "GET"
+endpoint = "/users/1"
+expected_status = 200
+
+# Example 1: Exact match (equivalent to expected_body)
+[[tests.assertions]]
+type = "Exact"
+
+# Using inline table for simple values
+[tests.assertions.value]
+id = 1
+name = "John Doe"
+email = "john@example.com"
+
+# Example 2: Contains match (partial validation)
+[[tests.assertions]]
+type = "Contains"
+
+[tests.assertions.value]
+id = 1
+roles = ["user"]
+
+# Example 3: Regex match on entire response
+[[tests.assertions]]
+type = "Regex"
+value = ".*\"email\":\\s*\"john@example.com\".*"
+
+# Example 4: PathRegex match on specific field
+[[tests.assertions]]
+type = "PathRegex"
+value = ["$.email", ".*@example\\.com"]
+
+# Example 5: PathRegex for numeric validation
+[[tests.assertions]]
+type = "PathRegex"
+value = ["$.id", "^[0-9]+$"]
+</code></pre>
+<h2 id="using-variables-in-assertions-and-expected-body"><a class="header" href="#using-variables-in-assertions-and-expected-body">Using Variables in Assertions and Expected Body</a></h2>
+<p>As of v0.2, Catalyst supports using variables in both <code>expected_body</code> and <code>assertions</code>, allowing for more dynamic and powerful tests.</p>
+<pre><code class="language-toml"># Test 1: Create a user and store the ID
+[[tests]]
+name = "Create User"
+method = "POST"
+endpoint = "/users"
+body = { "name" = "John Doe", "email" = "john@example.com" }
+expected_status = 201
+store = { "$.id" = "user_id" }
+
+# Test 2: Verify the user details with the stored ID
+[[tests]]
+name = "Get User Details"
+method = "GET"
+endpoint = "/users/{{user_id}}"
+expected_status = 200
+
+# Use the stored ID in expected_body with inline table
+[tests.expected_body]
+id = "{{user_id}}"  # Variable in expected_body
+name = "John Doe"
+
+# Test 3: Alternative using assertions
+[[tests]]
+name = "Verify User with Assertions"
+method = "GET"
+endpoint = "/users/{{user_id}}"
+expected_status = 200
+
+# Use variable in Contains assertion
+[[tests.assertions]]
+type = "Contains"
+value = { "id" = "{{user_id}}" }
+
+# Use variable in PathRegex assertion
+[[tests.assertions]]
+type = "PathRegex"
+value = ["$.id", "^{{user_id}}$"]
+</code></pre>
+<h2 id="variable-storage-and-usage"><a class="header" href="#variable-storage-and-usage">Variable Storage and Usage</a></h2>
+<h3 id="storing-variables"><a class="header" href="#storing-variables">Storing Variables</a></h3>
+<pre><code class="language-toml">[[tests]]
+name = "Extract and Store Values"
+method = "POST"
+endpoint = "/auth/login"
+body = { "username" = "user", "password" = "pass" }
+expected_status = 200
+
+# Extract and store values from JSON body using inline table
+[tests.store]
+"$.token" = "auth_token"        # Stores value at $.token in auth_token
+"$.user.id" = "user_id"         # Stores value at $.user.id in user_id
+"$.expires_at" = "token_expiry"  # Stores value at $.expires_at in token_expiry
+
+# Extract and store cookies using inline table
+[tests.get_cookie]
+"session" = "session_id"        # Stores session cookie value in session_id
+"XSRF-TOKEN" = "csrf_token"      # Stores XSRF-TOKEN cookie value in csrf_token
+</code></pre>
+<h3 id="using-stored-variables"><a class="header" href="#using-stored-variables">Using Stored Variables</a></h3>
+<pre><code class="language-toml">[[tests]]
+name = "Use Stored Variables"
+method = "GET"
+endpoint = "/users/{{user_id}}"  # Uses user_id variable in URL
+expected_status = 200
+
+# Headers using inline table or subtable syntax
+[tests.headers]
+"Authorization" = "Bearer {{auth_token}}"  # Uses auth_token in header
+"X-CSRF-Token" = "{{csrf_token}}"         # Uses csrf_token in header
+
+# Variables can be used in any part of the test
+[tests.body]
+token = "{{auth_token}}"
+session = "{{session_id}}"
+</code></pre>
+<h2 id="response-time-validation-1"><a class="header" href="#response-time-validation-1">Response Time Validation</a></h2>
+<p>Catalyst automatically measures the response time for each test and makes it available as a variable.</p>
+<pre><code class="language-toml">[[tests]]
+name = "Response Time Validation"
+method = "GET"
+endpoint = "/fast-endpoint"
+expected_status = 200
+max_response_time = 100  # Response must be received in less than 100ms
+
+# The response_time_ms variable is automatically created after each test
+# and can be used in subsequent tests
+[[tests]]
+name = "Log Response Time"
+method = "POST"
+endpoint = "/metrics/log"
+expected_status = 200
+
+# Body using inline table for simple structure
+body = { "previous_response_time" = "{{response_time_ms}}" }
+</code></pre>
+<h2 id="test-chaining-example"><a class="header" href="#test-chaining-example">Test Chaining Example</a></h2>
+<pre><code class="language-toml"># Test 1: Create a resource
+[[tests]]
+name = "Create Resource"
+method = "POST"
+endpoint = "/resources"
+body = { "name" = "New Resource" }
+expected_status = 201
+store = { "$.id" = "resource_id" }  # Store ID for next test
+
+# Test 2: Get the created resource
+[[tests]]
+name = "Get Created Resource"
+method = "GET"
+endpoint = "/resources/{{resource_id}}"  # Use stored ID
+expected_status = 200
+
+[[tests.assertions]]
+type = "Contains"
+value = { "name" = "New Resource" }
+
+# Test 3: Update the resource
+[[tests]]
+name = "Update Resource"
+method = "PUT"
+endpoint = "/resources/{{resource_id}}"
+body = { "name" = "Updated Resource" }
+expected_status = 200
+
+# Test 4: Verify the update
+[[tests]]
+name = "Verify Update"
+method = "GET"
+endpoint = "/resources/{{resource_id}}"
+expected_status = 200
+
+[[tests.assertions]]
+type = "Contains"
+value = { "name" = "Updated Resource" }
+
+# Test 5: Delete the resource
+[[tests]]
+name = "Delete Resource"
+method = "DELETE"
+endpoint = "/resources/{{resource_id}}"
+expected_status = 204
+</code></pre>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+        <script>
+        window.addEventListener('load', function() {
+            window.setTimeout(window.print, 100);
+        });
+        </script>
+
+    </div>
+    </body>
+</html>
