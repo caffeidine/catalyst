@@ -61,9 +61,12 @@ impl HttpClient {
         let body = if response.content_length().unwrap_or(0) == 0 {
             Value::Null
         } else {
-            match response.json().await {
-                Ok(json) => json,
-                Err(_) => ("Failed to parse response body").into(),
+            match response.text().await {
+                Ok(text) => match serde_json::from_str(&text) {
+                    Ok(json) => json,
+                    Err(_) => Value::String(text),
+                },
+                Err(_) => Value::String("Failed to read response body".into()),
             }
         };
 

@@ -33,16 +33,56 @@ pub fn replace_variables_in_json(json: &Value, vars: &HashMap<String, String>) -
     }
 }
 
-fn get_json_value(json: &Value, path: &str) -> Option<String> {
+pub fn get_json_value(json: &Value, path: &str) -> Option<String> {
     let parts = path.strip_prefix("$.")?;
-    parts
-        .split('.')
-        .try_fold(json, |j, key| match j {
-            Value::Object(map) => map.get(key),
-            Value::Array(arr) => key.parse::<usize>().ok().and_then(|i| arr.get(i)),
-            _ => None,
-        })
-        .map(|v| v.to_string().trim_matches('"').to_string())
+    let mut current = json;
+
+    debug!("Extracting value from path: {}", path);
+    debug!("Initial JSON: {:?}", json);
+
+    for part in parts.split('.') {
+        debug!("Processing path part: {}", part);
+
+        if part.contains('[') && part.contains(']') {
+            // Handle array access with [n] notation
+            let key = part.split('[').next()?;
+            let idx_str = part
+                .split('[')
+                .nth(1)?
+                .trim_end_matches(']')
+                .parse::<usize>()
+                .ok()?;
+
+            if !key.is_empty() {
+                debug!("Accessing object key: {}", key);
+                current = current.get(key)?;
+                debug!("After key access: {:?}", current);
+            }
+            debug!("Accessing array index: {}", idx_str);
+            current = current.get(idx_str)?;
+        } else {
+            // Try as array index first
+            if let Ok(idx) = part.parse::<usize>() {
+                debug!("Using direct array index: {}", idx);
+                current = current.get(idx)?;
+            } else {
+                debug!("Accessing object key: {}", part);
+                current = current.get(part)?;
+            }
+        }
+
+        debug!("Current value after access: {:?}", current);
+    }
+
+    let result = match current {
+        Value::String(s) => s.clone(),
+        Value::Number(n) => n.to_string(),
+        Value::Bool(b) => b.to_string(),
+        _ => current.to_string().trim_matches('"').to_string(),
+    };
+
+    debug!("Extracted final value: {}", result);
+    Some(result)
 }
 
 pub fn store_variables(
@@ -53,13 +93,29 @@ pub fn store_variables(
     response_time_ms: u64,
     vars: &mut HashMap<String, String>,
 ) {
+    debug!("Starting variable storage");
+    debug!("Current variables: {:?}", vars);
     debug!("Headers received: {:?}", headers);
+    debug!("Body received: {:?}", body);
+    debug!("Store map: {:?}", store_map);
 
     vars.insert("response_time_ms".to_string(), response_time_ms.to_string());
 
     for (var_name, path) in store_map {
+        debug!("Attempting to extract '{}' from path '{}'", var_name, path);
         if let Some(value) = get_json_value(body, path) {
-            vars.insert(var_name.clone(), value);
+            let clean_value = value.trim_matches('"').to_string();
+            debug!("Successfully stored {} = {}", var_name, clean_value);
+            vars.insert(var_name.clone(), clean_value);
+        } else {
+            debug!(
+                "⚠️ Failed to extract value at path '{}' for variable '{}'",
+                path, var_name
+            );
+            debug!(
+                "Current JSON body: {}",
+                serde_json::to_string_pretty(body).unwrap_or_default()
+            );
         }
     }
 

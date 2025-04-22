@@ -1,3 +1,4 @@
+use crate::debug;
 use regex::Regex;
 use serde_json::Value;
 
@@ -78,26 +79,42 @@ pub fn contains_json_value(expected: &Value, actual: &Value) -> bool {
                 match actual_obj.get(key) {
                     Some(actual_value) => {
                         if !contains_json_value(expected_value, actual_value) {
+                            debug!("Object key '{}' value mismatch", key);
                             return false;
                         }
                     }
-                    None => return false,
+                    None => {
+                        debug!("Missing object key '{}'", key);
+                        return false;
+                    }
                 }
             }
             true
         }
         (Value::Array(expected_arr), Value::Array(actual_arr)) => {
+            // Si le tableau attendu est vide, on accepte n'importe quel tableau
+            if expected_arr.is_empty() {
+                return true;
+            }
+
             for expected_value in expected_arr {
                 if !actual_arr
                     .iter()
                     .any(|actual_value| contains_json_value(expected_value, actual_value))
                 {
+                    debug!("No matching array element found");
                     return false;
                 }
             }
             true
         }
-        _ => expected == actual,
+        _ => {
+            let matches = expected == actual;
+            if !matches {
+                debug!("Value mismatch: expected {:?}, got {:?}", expected, actual);
+            }
+            matches
+        }
     }
 }
 

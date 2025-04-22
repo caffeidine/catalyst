@@ -124,7 +124,7 @@ impl TestRunner {
                 if let Some(body) = &result.response_body {
                     println!(
                         "\nResponse Body: {}",
-                        serde_json::to_string_pretty(body).unwrap_or_default()
+                        serde_json::to_string_pretty(body).unwrap_or(body.to_string())
                     );
                 }
 
