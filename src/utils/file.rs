@@ -9,11 +9,13 @@ pub fn load_body_from_file(
     test_file_dir: &Path,
     vars: &HashMap<String, String>,
 ) -> Result<Value, String> {
-    let full_path = test_file_dir.join(file_path);
-
-    if !full_path.starts_with(test_file_dir) {
+    // Security check - ensure path doesn't contain path traversal
+    if file_path.contains("..") {
         return Err("File path cannot escape test directory".to_string());
     }
+
+    // Resolve path relative to test file directory
+    let full_path = test_file_dir.join(file_path);
 
     if !full_path.exists() {
         return Err(format!("File '{}' does not exist", file_path));
