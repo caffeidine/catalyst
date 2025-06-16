@@ -80,8 +80,9 @@ auth_token = "your-token-here"
 | `method`            | HTTP method                                   | Yes      | `"GET"` (options: GET, POST, PUT, DELETE, PATCH, etc.) |
 | `endpoint`          | API endpoint (appended to base_url)           | Yes      | `"/users/1"`                                           |
 | `query_params`      | Query parameters for the URL                  | No       | `{ "page" = "1", "limit" = "10" }`                     |
-| `headers`           | Headers specific to this test                 | No       | `{ "X-Custom-Header" = "value" }`                      |
+| `headers`           | Headers specific to this test                  | No       | `{ "X-Custom-Header" = "value" }`                      |
 | `body`              | Request body (for POST, PUT, etc.)            | No       | `{ "name" = "John Doe" }`                              |
+| `body_file`         | Path to file containing request body            | No       | `"data/create-user.json"`                              |
 | `expected_status`   | Expected HTTP status code                     | Yes      | `200`                                                  |
 | `expected_body`     | Expected response body (exact match)          | No       | `{ "success" = true }`                                 |
 | `assertions`        | Advanced assertions for response validation   | No       | See Assertions section                                 |
@@ -107,6 +108,56 @@ expected_body = { "success" = true }
 expected_headers = [["Content-Type", "application/json"]]
 max_response_time = 500
 ```
+
+## Using File-Based Request Bodies
+
+For large request bodies or to keep test files clean, you can use `body_file` to load content from external files.
+
+### Basic Usage
+
+```toml
+[[tests]]
+name = "Create User with File"
+method = "POST"
+endpoint = "/users"
+body_file = "data/create-user.json"
+expected_status = 201
+```
+
+### File Path Resolution
+
+- Paths are resolved relative to the test file directory
+- When using `--file /path/to/tests.toml`, body files are resolved relative to `/path/to/`
+- Subdirectories are allowed: `"data/payloads/large-request.json"`
+- Security: Path traversal (`../`) and absolute paths are not allowed
+
+### File Format Support
+
+- **JSON files** (`.json`): Automatically parsed as JSON
+- **Other files**: Treated as plain text content
+- **Variable substitution**: All files support `{{variable}}` replacement
+
+### Example Directory Structure
+
+```
+my-tests/
+├── tests.toml
+└── data/
+    ├── create-user.json
+    └── update-profile.json
+```
+
+### Variable Substitution in Files
+
+```json
+{
+  "user_id": "{{user_id}}",
+  "name": "{{username}}",
+  "timestamp": "{{current_timestamp}}"
+}
+```
+
+**Note**: You cannot specify both `body` and `body_file` in the same test.
 
 ## Response Validation
 

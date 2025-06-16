@@ -1,0 +1,14 @@
+[config]
+base_url = "https://httpbin.org"
+default_headers = { "Content-Type" = "application/json" }
+
+[[tests]]
+name = "Test with Custom Directory Body File"
+method = "POST"
+endpoint = "/post"
+body_file = "data/test-request.json"
+expected_status = 200
+
+[[tests.assertions]]
+type = "Contains"
+value = { "url" = "https://httpbin.org/post" }

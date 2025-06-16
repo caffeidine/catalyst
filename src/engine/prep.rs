@@ -1,9 +1,14 @@
+// This module is currently unused as body resolution logic
+// has been moved to execution.rs to properly handle test file directories.
+// Keeping for potential future use.
+
 use crate::{
     models::{suite::TestSuite, test::Test},
-    utils::string::replace_variables,
+    utils::{file::load_body_from_file, string::replace_variables},
 };
 use serde_json::Value;
 use std::collections::HashMap;
+use std::path::Path;
 
 pub struct Request {
     pub url: String,
@@ -25,10 +30,7 @@ pub fn build(test: &Test, suite: &TestSuite, vars: &HashMap<String, String>) -> 
                 .map(|(k, v)| (k.clone(), replace_variables(v, vars)))
                 .collect()
         }),
-        body: test.body.as_ref().map(|body| {
-            let body_str = serde_json::to_string(body).unwrap_or_default();
-            serde_json::from_str(&replace_variables(&body_str, vars)).unwrap_or(Value::Null)
-        }),
+        body: resolve_body(test, vars),
     }
 }
 
@@ -69,5 +71,24 @@ fn build_headers(
         None
     } else {
         Some(headers)
+    }
+}
+
+fn resolve_body(test: &Test, vars: &HashMap<String, String>) -> Option<Value> {
+    if let Some(body) = &test.body {
+        // Existing logic for inline body
+        let body_str = serde_json::to_string(body).unwrap_or_default();
+        Some(serde_json::from_str(&replace_variables(&body_str, vars)).unwrap_or(Value::Null))
+    } else if let Some(body_file) = &test.body_file {
+        // New: File-based body logic
+        match load_body_from_file(body_file, vars) {
+            Ok(content) => Some(content),
+            Err(e) => {
+                eprintln!("Error loading body file '{}': {}", body_file, e);
+                None
+            }
+        }
+    } else {
+        None
     }
 }

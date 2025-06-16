@@ -21,6 +21,7 @@ pub struct Test {
     pub query_params: Option<HashMap<String, String>>,
     pub headers: Option<HashMap<String, String>>,
     pub body: Option<serde_json::Value>,
+    pub body_file: Option<String>,
     pub expected_status: u16,
 
     pub expected_body: Option<serde_json::Value>,

@@ -1,0 +1,5 @@
+{
+  "name": "Custom Test User",
+  "email": "custom@example.com",
+  "message": "This file is in custom-tests/data/ directory!"
+}

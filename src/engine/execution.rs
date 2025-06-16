@@ -2,9 +2,10 @@ use super::{variables, verify};
 use crate::debug;
 use crate::http::client::{HttpClient, RequestData};
 use crate::models::test::Test;
-use crate::utils::string::replace_variables;
+use crate::utils::{file::load_body_from_file, string::replace_variables};
 use serde_json::Value;
 use std::collections::HashMap;
+use std::path::Path;
 use std::time::Instant;
 
 pub struct ExecutionResult {
@@ -19,6 +20,7 @@ pub struct ExecutionResult {
 pub async fn run(
     client: &HttpClient,
     test: &Test,
+    test_file_dir: &Path,
     vars: &mut HashMap<String, String>,
 ) -> ExecutionResult {
     let start = Instant::now();
@@ -43,15 +45,26 @@ pub async fn run(
         })
         .unwrap_or_default();
 
+    let body = if let Some(inline_body) = &test.body {
+        Some(variables::replace_variables_in_json(inline_body, vars))
+    } else if let Some(body_file) = &test.body_file {
+        match load_body_from_file(body_file, test_file_dir, vars) {
+            Ok(content) => Some(content),
+            Err(e) => {
+                eprintln!("Error loading body file '{}': {}", body_file, e);
+                None
+            }
+        }
+    } else {
+        None
+    };
+
     let request = RequestData {
         method: test.method.clone(),
         url: replace_variables(&test.endpoint, vars),
         headers,
         params,
-        body: test
-            .body
-            .as_ref()
-            .map(|b| variables::replace_variables_in_json(b, vars)),
+        body,
     };
 
     debug!(
@@ -63,7 +76,6 @@ pub async fn run(
         Ok((status, body, mut headers)) => {
             let time_ms = start.elapsed().as_millis() as u64;
 
-            // Add lowercase versions of headers for case-insensitive lookup
             let header_keys: Vec<String> = headers.keys().cloned().collect();
             for key in header_keys {
                 if let Some(value) = headers.get(&key) {
@@ -73,7 +85,6 @@ pub async fn run(
 
             debug!("Response headers: {:?}", headers);
 
-            // Extract cookies first if requested
             if let Some(cookie_map) = &test.get_cookie {
                 debug!("Attempting to extract cookies: {:?}", cookie_map);
                 variables::store_variables(
@@ -89,7 +100,6 @@ pub async fn run(
 
             let validation = verify::check(test, status, &body, time_ms, vars);
 
-            // Store other variables if test passed
             if validation.ok && test.store.is_some() {
                 variables::store_variables(
                     &body,
