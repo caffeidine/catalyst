@@ -7,6 +7,7 @@ use colored::*;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::env;
+use std::path::Path;
 
 fn get_terminal_width() -> usize {
     env::var("COLUMNS")
@@ -41,12 +42,18 @@ impl TestRunner {
         }
     }
 
-    async fn execute_test(&mut self, test: &Test, client: &HttpClient) -> TestResult {
+    async fn execute_test(
+        &mut self,
+        test: &Test,
+        client: &HttpClient,
+        test_file_dir: &Path,
+    ) -> TestResult {
         debug!(
             "Variables before test '{}': {:?}",
             test.name, self.variables
         );
-        let result = crate::engine::execution::run(client, test, &mut self.variables).await;
+        let result =
+            crate::engine::execution::run(client, test, test_file_dir, &mut self.variables).await;
         debug!("Variables after test '{}': {:?}", test.name, self.variables);
         TestResult {
             name: test.name.clone(),
@@ -66,6 +73,10 @@ impl TestRunner {
         file: Option<String>,
     ) {
         load_env_files();
+
+        // Calculate test file directory
+        let test_file_path = file.as_deref().unwrap_or(".catalyst/tests.toml");
+        let test_file_dir = Path::new(test_file_path).parent().unwrap_or(Path::new("."));
 
         let test_suite = match parse_tests(file.as_deref()) {
             Ok(suite) => suite,
@@ -90,7 +101,7 @@ impl TestRunner {
                 }
             }
 
-            let result = self.execute_test(test, &client).await;
+            let result = self.execute_test(test, &client, test_file_dir).await;
             let status_matches = result.expected_status == result.actual_status;
 
             if verbose {
