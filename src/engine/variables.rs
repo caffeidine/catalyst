@@ -1,8 +1,9 @@
 use crate::debug;
-use crate::utils::string::replace_variables;
+use crate::utils::string::{replace_variables, replace_variables_with_files};
 use dotenv::dotenv;
 use serde_json::Value;
 use std::collections::HashMap;
+use std::path::Path;
 
 pub fn load_env_files() {
     if dotenv::from_filename(".env.local").is_ok() {
@@ -30,6 +31,36 @@ pub fn replace_variables_in_json(json: &Value, vars: &HashMap<String, String>) -
                 .collect(),
         ),
         _ => json.clone(),
+    }
+}
+
+pub fn replace_variables_in_json_with_files(
+    json: &Value,
+    vars: &HashMap<String, String>,
+    test_file_dir: &Path,
+) -> Result<Value, String> {
+    match json {
+        Value::String(s) => {
+            let result = replace_variables_with_files(s, vars, test_file_dir)?;
+            Ok(Value::String(result))
+        }
+        Value::Object(map) => {
+            let mut new_map = serde_json::Map::new();
+            for (k, v) in map {
+                let new_value = replace_variables_in_json_with_files(v, vars, test_file_dir)?;
+                new_map.insert(k.clone(), new_value);
+            }
+            Ok(Value::Object(new_map))
+        }
+        Value::Array(arr) => {
+            let mut new_arr = Vec::new();
+            for v in arr {
+                let new_value = replace_variables_in_json_with_files(v, vars, test_file_dir)?;
+                new_arr.push(new_value);
+            }
+            Ok(Value::Array(new_arr))
+        }
+        _ => Ok(json.clone()),
     }
 }
 

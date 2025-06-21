@@ -12,3 +12,17 @@ expected_status = 200
 [[tests.assertions]]
 type = "Contains"
 value = { "url" = "https://httpbin.org/post" }
+
+[[tests]]
+name = "Test with File Inclusion in Body"
+method = "POST"
+endpoint = "/post"
+expected_status = 200
+
+[tests.body]
+metadata = { "type" = "document", "source" = "test" }
+content = "{{file:data/sample-text.txt}}"
+
+[[tests.assertions]]
+type = "Contains"
+value = { "json" = { "content" = "Hello from a text file!" } }

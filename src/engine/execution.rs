@@ -46,7 +46,13 @@ pub async fn run(
         .unwrap_or_default();
 
     let body = if let Some(inline_body) = &test.body {
-        Some(variables::replace_variables_in_json(inline_body, vars))
+        match variables::replace_variables_in_json_with_files(inline_body, vars, test_file_dir) {
+            Ok(processed_body) => Some(processed_body),
+            Err(e) => {
+                eprintln!("Error processing body with file references: {}", e);
+                Some(variables::replace_variables_in_json(inline_body, vars))
+            }
+        }
     } else if let Some(body_file) = &test.body_file {
         match load_body_from_file(body_file, test_file_dir, vars) {
             Ok(content) => Some(content),

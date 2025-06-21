@@ -159,6 +159,24 @@ my-tests/
 
 **Note**: You cannot specify both `body` and `body_file` in the same test.
 
+## File Inclusion in Inline Body
+
+You can include file content directly in inline `body` definitions using the `{{file:path}}` syntax:
+
+```toml
+[[tests]]
+name = "Upload Document"
+method = "POST"
+endpoint = "/upload"
+body = { "metadata" = { "type" = "document", "user" = "{{username}}" }, "content" = "{{file:data/document.txt}}" }
+expected_status = 200
+```
+
+- **Automatic Escaping**: File content is escaped for safe JSON inclusion
+- **Variable Mixing**: Can combine `{{variable}}` and `{{file:path}}` syntax
+- **Path Security**: Same restrictions as `body_file` (no path traversal)
+- **Any File Type**: Supports text, JSON, HTML, XML, etc.
+
 ## Response Validation
 
 ### Using expected_body vs. assertions
