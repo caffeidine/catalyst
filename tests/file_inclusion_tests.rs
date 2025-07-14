@@ -13,7 +13,7 @@ mod tests {
             .name()
             .map(|s| s.to_string())
             .unwrap_or_else(|| "unknown".to_string());
-        let temp_dir = env::temp_dir().join(format!("catalyst_test_{}", test_name));
+        let temp_dir = env::temp_dir().join(format!("catalyst_test_{test_name}"));
         if temp_dir.exists() {
             let _ = fs::remove_dir_all(&temp_dir);
         }
@@ -241,7 +241,7 @@ mod tests {
             .name()
             .map(|s| s.to_string())
             .unwrap_or_else(|| "unknown".to_string());
-        let temp_dir = env::temp_dir().join(format!("catalyst_empty_{}", test_name));
+        let temp_dir = env::temp_dir().join(format!("catalyst_empty_{test_name}"));
         if temp_dir.exists() {
             let _ = fs::remove_dir_all(&temp_dir);
         }
@@ -266,7 +266,7 @@ mod tests {
             .name()
             .map(|s| s.to_string())
             .unwrap_or_else(|| "unknown".to_string());
-        let temp_dir = env::temp_dir().join(format!("catalyst_special_{}", test_name));
+        let temp_dir = env::temp_dir().join(format!("catalyst_special_{test_name}"));
         if temp_dir.exists() {
             let _ = fs::remove_dir_all(&temp_dir);
         }

@@ -1,0 +1,32 @@
+[config]
+base_url = "https://httpbin.org"
+default_headers = { "Content-Type" = "application/json" }
+
+# Test using CLI variables
+[[tests]]
+name = "Test with CLI Variables"
+method = "GET"
+endpoint = "/get?user={{user_id}}&token={{api_token}}"
+expected_status = 200
+
+[[tests.assertions]]
+type = "Contains"
+value = { "args" = { "user" = "{{user_id}}", "token" = "{{api_token}}" } }
+
+# Test with store and use
+[[tests]]
+name = "Store Variable Test"
+method = "GET"
+endpoint = "/uuid"
+expected_status = 200
+store = { "$.uuid" = "generated_uuid" }
+
+[[tests]]
+name = "Use Stored Variable"
+method = "GET"
+endpoint = "/get?uuid={{generated_uuid}}"
+expected_status = 200
+
+[[tests.assertions]]
+type = "Contains"
+value = { "args" = { "uuid" = "{{generated_uuid}}" } }

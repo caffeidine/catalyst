@@ -11,6 +11,7 @@ pub fn run(opts: Opts) {
             verbose,
             file,
             debug: debug_enabled,
+            var,
         } => {
             if debug_enabled {
                 debug::enable_debug();
@@ -21,13 +22,14 @@ pub fn run(opts: Opts) {
                 verbose,
                 disable_color,
                 file,
+                var,
             ));
         }
-        Commands::Validate { file } => {
+        Commands::Validate { file, var } => {
             println!("Validating tests configuration...");
             tokio::runtime::Runtime::new()
                 .unwrap()
-                .block_on(run_validate(file));
+                .block_on(run_validate(file, var));
         }
         Commands::List { verbose, file } => {
             println!("Listing available tests...");
@@ -36,7 +38,8 @@ pub fn run(opts: Opts) {
     }
 }
 
-pub async fn run_validate(file: Option<String>) {
+pub async fn run_validate(file: Option<String>, _var: Option<String>) {
+    // Note: Variables are not used in validation, only for actual test execution
     match file {
         Some(f) => validate(Some(&f)),
         None => validate(None),
@@ -48,7 +51,8 @@ pub async fn run_tests(
     verbose: bool,
     disable_color: bool,
     file: Option<String>,
+    var: Option<String>,
 ) {
     let mut runner = TestRunner::new(disable_color);
-    runner.execute_tests(filter, verbose, file).await;
+    runner.execute_tests(filter, verbose, file, var).await;
 }

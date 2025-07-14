@@ -71,8 +71,13 @@ impl TestRunner {
         filter: Option<String>,
         verbose: bool,
         file: Option<String>,
+        var: Option<String>,
     ) {
         load_env_files();
+
+        // Parse CLI variables and add them to the runner's variables
+        let cli_variables = crate::cli::Commands::parse_variables(var);
+        self.variables.extend(cli_variables);
 
         // Calculate test file directory
         let test_file_path = file.as_deref().unwrap_or(".catalyst/tests.toml");
@@ -81,7 +86,7 @@ impl TestRunner {
         let test_suite = match parse_tests(file.as_deref()) {
             Ok(suite) => suite,
             Err(e) => {
-                eprintln!("{}", format!("Failed to parse tests: {}", e).red());
+                eprintln!("{}", format!("Failed to parse tests: {e}").red());
                 return;
             }
         };
@@ -130,7 +135,7 @@ impl TestRunner {
                     },
                     result.expected_status.to_string().bold()
                 );
-                println!("{}", status_display);
+                println!("{status_display}");
 
                 if let Some(body) = &result.response_body {
                     println!(
@@ -210,7 +215,7 @@ impl TestRunner {
                     println!("  Expected status: {}", result.expected_status);
                     println!("  Actual status: {}", result.actual_status);
                     for msg in &result.messages {
-                        println!("  - {}", msg);
+                        println!("  - {msg}");
                     }
                 }
             }
@@ -225,21 +230,21 @@ impl TestRunner {
 
             println!("\nSummary:");
             if success_count > 0 {
-                print!("{} passed", format!("{} tests", success_count).green());
+                print!("{} passed", format!("{success_count} tests").green());
             }
             if fail_count > 0 {
                 if success_count > 0 {
                     print!(", ");
                 }
-                print!("{} failed", format!("{} tests", fail_count).red());
+                print!("{} failed", format!("{fail_count} tests").red());
             }
             if skipped > 0 {
                 if success_count > 0 || fail_count > 0 {
                     print!(", ");
                 }
-                print!("{} skipped", format!("{} tests", skipped).yellow());
+                print!("{} skipped", format!("{skipped} tests").yellow());
             }
-            println!(" (total: {})", total);
+            println!(" (total: {total})");
         }
     }
 }

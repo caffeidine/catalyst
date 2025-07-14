@@ -52,6 +52,31 @@ If you're running tests in an environment that doesn't support colored output, y
 catalyst run --disable-color
 ```
 
+### Setting Variables from CLI
+
+You can pass variables directly from the command line using the `--var` option. This is useful for setting environment-specific values or dynamic test data:
+
+```bash
+catalyst run --var user_id=123,api_token=secret_key
+```
+
+Variables are specified in `key=value` format and multiple variables are separated by commas. These variables can then be used in your test files using the `{{variable}}` syntax:
+
+```toml
+[[tests]]
+name = "Get User"
+method = "GET"
+endpoint = "/users/{{user_id}}"
+headers = { "Authorization" = "Bearer {{api_token}}" }
+expected_status = 200
+```
+
+CLI variables work with both complex values and special characters:
+
+```bash
+catalyst run --var base_url=https://api.example.com,timeout=30,debug=true
+```
+
 ### Complete CLI Reference
 
 Here's a complete list of available commands and options:
@@ -64,10 +89,12 @@ CATALYST COMMANDS:
       --disable-color          Disable colored output
       -v, --verbose            Enable verbose output
       --file <FILE>            Specify a custom test file path
+      --var <VAR>              Set variables in key=value format (comma-separated)
 
   validate  Validate tests configuration
     Options:
       --file <FILE>            Specify a custom test file path
+      --var <VAR>              Set variables in key=value format (comma-separated)
 
   list      List available tests
     Options:
