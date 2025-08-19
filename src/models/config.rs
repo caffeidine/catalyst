@@ -8,6 +8,7 @@ pub struct Config {
     pub auth_token: Option<String>,
     pub default_headers: Option<HashMap<String, String>>,
     pub env: Option<EnvConfig>,
+    pub insecure: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, Clone)]

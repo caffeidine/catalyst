@@ -18,8 +18,17 @@ pub struct HttpClient {
 
 impl HttpClient {
     pub fn new(config: &Config) -> Self {
+        let client = if config.insecure.unwrap_or(false) {
+            Client::builder()
+                .danger_accept_invalid_certs(true)
+                .build()
+                .expect("Failed to build HTTP client")
+        } else {
+            Client::new()
+        };
+        
         HttpClient {
-            client: Client::new(),
+            client,
             config: config.clone(),
         }
     }
