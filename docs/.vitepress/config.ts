@@ -35,6 +35,7 @@ export default defineConfig({
           { text: 'Request Bodies', link: '/guides/request-bodies' },
           { text: 'Assertions', link: '/guides/assertions' },
           { text: 'Hooks', link: '/guides/hooks' },
+          { text: 'AI Context Specs', link: '/guides/ai-context-specs' },
           { text: 'Run, Filter, and Debug', link: '/guides/run-debug' },
           { text: 'CI/CD Integration', link: '/guides/ci-cd' },
           { text: 'Troubleshooting', link: '/guides/troubleshooting' },
