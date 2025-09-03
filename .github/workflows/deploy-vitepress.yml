@@ -1,0 +1,51 @@
+name: Deploy VitePress
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: 'docs/package-lock.json'
+
+      - name: Install dependencies
+        run: cd docs && npm install
+
+      - name: Build VitePress
+        run: cd docs && npm run docs:build
+
+      - name: Copy CNAME (custom domain)
+        run: |
+          if [ -f docs/CNAME ]; then
+            cp docs/CNAME docs/.vitepress/dist/CNAME
+          fi
+
+      - name: Deploy to gh-pages
+        run: |
+          git config user.name "Deploy from CI"
+          git config user.email ""
+          git worktree add gh-pages
+          cd gh-pages
+          git update-ref -d refs/heads/gh-pages || true
+          rm -rf *
+          cd ..
+          cp -R docs/.vitepress/dist/* gh-pages/
+          cd gh-pages
+          git add .
+          git commit -m "Deploy VitePress $GITHUB_SHA" || echo "No changes to commit"
+          git push --force --set-upstream origin gh-pages

@@ -1,0 +1,120 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Tag or branch to build from"
+        required: true
+        default: "main"
+        type: string
+      create_release:
+        description: "Create GitHub release"
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  build:
+    name: Build for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            binary_suffix: ""
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+            binary_suffix: ""
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            binary_suffix: ".exe"
+          - os: macos-15
+            target: x86_64-apple-darwin
+            binary_suffix: ""
+          - os: macos-15
+            target: aarch64-apple-darwin
+            binary_suffix: ""
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Verify target installation
+        run: rustup target list --installed
+
+      - name: Build binary
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Get binary name from Cargo.toml
+        id: binary_name
+        shell: bash
+        run: |
+          BINARY_NAME=$(grep '^name = ' Cargo.toml | head -1 | sed 's/name = "\(.*\)"/\1/')
+          echo "binary_name=$BINARY_NAME" >> $GITHUB_OUTPUT
+
+      - name: Prepare binary for release
+        shell: bash
+        run: |
+          BINARY_NAME="${{ steps.binary_name.outputs.binary_name }}"
+          BINARY_RELEASE_NAME="${BINARY_NAME}-${{ matrix.target }}"
+
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            cp "target/${{ matrix.target }}/release/${BINARY_NAME}.exe" "${BINARY_RELEASE_NAME}.exe"
+            echo "BINARY_FILE=${BINARY_RELEASE_NAME}.exe" >> $GITHUB_ENV
+          else
+            cp "target/${{ matrix.target }}/release/${BINARY_NAME}" "${BINARY_RELEASE_NAME}"
+            echo "BINARY_FILE=${BINARY_RELEASE_NAME}" >> $GITHUB_ENV
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.BINARY_FILE }}
+          path: ${{ env.BINARY_FILE }}
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
+
+      - name: Create source archive
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            VERSION="${{ github.event.inputs.ref }}"
+          fi
+          git archive --format=tar.gz --prefix=catalyst-${VERSION}/ HEAD -o catalyst-${VERSION}-source.tar.gz
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/*/*
+            catalyst-*-source.tar.gz
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
