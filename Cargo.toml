@@ -1,6 +1,6 @@
 [package]
 name = "catalyst"
-version = "0.2.8"
+version = "0.2.9"
 edition = "2024"
 readme = "README.md"
 license = "MPL-2.0"
