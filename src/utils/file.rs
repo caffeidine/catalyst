@@ -1,3 +1,4 @@
+use crate::error::{CatalystError, CatalystResult};
 use crate::utils::string::replace_variables;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -8,31 +9,31 @@ pub fn load_body_from_file(
     file_path: &str,
     test_file_dir: &Path,
     vars: &HashMap<String, String>,
-) -> Result<Value, String> {
+) -> CatalystResult<Value> {
     // Security check - ensure path doesn't contain path traversal
     if file_path.contains("..") {
-        return Err("File path cannot escape test directory".to_string());
+        return Err(CatalystError::file_error("File path cannot escape test directory"));
     }
 
     // Resolve path relative to test file directory
     let full_path = test_file_dir.join(file_path);
 
     if !full_path.exists() {
-        return Err(format!("File '{}' does not exist", file_path));
+        return Err(CatalystError::file_error(format!("File '{file_path}' does not exist")));
     }
 
     if !full_path.is_file() {
-        return Err(format!("'{}' is not a file", file_path));
+        return Err(CatalystError::file_error(format!("'{file_path}' is not a file")));
     }
 
     let content = fs::read_to_string(&full_path)
-        .map_err(|e| format!("Cannot read file '{}': {}", file_path, e))?;
+        .map_err(|e| CatalystError::file_error(format!("Cannot read file '{file_path}': {e}")))?;
 
     let processed_content = replace_variables(&content, vars);
 
     if file_path.ends_with(".json") {
         serde_json::from_str(&processed_content)
-            .map_err(|e| format!("Invalid JSON in file '{}': {}", file_path, e))
+            .map_err(|e| CatalystError::json_error(format!("Invalid JSON in file '{file_path}': {e}")))
     } else {
         Ok(Value::String(processed_content))
     }
@@ -110,7 +111,7 @@ mod tests {
         let result = load_body_from_file("../secret.json", test_dir, &vars);
 
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("escape test directory"));
+        assert!(result.unwrap_err().to_string().contains("escape test directory"));
     }
 
     #[test]
@@ -120,6 +121,6 @@ mod tests {
         let result = load_body_from_file("nonexistent.json", test_dir, &vars);
 
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("does not exist"));
+        assert!(result.unwrap_err().to_string().contains("does not exist"));
     }
 }

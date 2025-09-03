@@ -243,19 +243,7 @@ pub fn evaluate_condition(condition: &str) -> bool {
 }
 
 fn extract_json_path(json: &serde_json::Value, path: &str) -> Option<String> {
-    // Simple JSONPath implementation for basic paths like "$.field" or "$.nested.field"
-    let path = path.strip_prefix("$.").unwrap_or(path);
-    let parts: Vec<&str> = path.split('.').collect();
-    
-    let mut current = json;
-    for part in parts {
-        current = current.get(part)?;
-    }
-    
-    Some(match current {
-        serde_json::Value::String(s) => s.clone(),
-        other => other.to_string().trim_matches('"').to_string(),
-    })
+    crate::utils::json_path::extract_json_path(json, path)
 }
 
 /// Executes multiple command steps in sequence

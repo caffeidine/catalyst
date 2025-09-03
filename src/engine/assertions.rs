@@ -122,33 +122,5 @@ pub fn contains_json_value(expected: &Value, actual: &Value) -> bool {
 /// May panic if the path contains invalid array indices
 #[must_use]
 pub fn extract_json_value(json: &Value, path: &str) -> Option<String> {
-    let parts: Vec<&str> = path.trim_start_matches("$.").split('.').collect();
-    let mut current = json;
-
-    for part in parts {
-        if part.contains('[') && part.contains(']') {
-            let idx_start = part.find('[').unwrap();
-            let idx_end = part.find(']').unwrap();
-            let key = &part[0..idx_start];
-            let idx: usize = part[idx_start + 1..idx_end].parse().ok()?;
-
-            if !key.is_empty() {
-                current = &current[key];
-            }
-            current = &current[idx];
-        } else {
-            current = &current[part];
-        }
-
-        if current.is_null() {
-            return None;
-        }
-    }
-
-    match current {
-        Value::String(s) => Some(s.clone()),
-        Value::Number(n) => Some(n.to_string()),
-        Value::Bool(b) => Some(b.to_string()),
-        _ => Some(current.to_string()),
-    }
+    crate::utils::json_path::extract_json_path(json, path)
 }

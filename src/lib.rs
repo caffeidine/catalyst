@@ -24,6 +24,7 @@ pub mod checker;
 pub mod cli;
 pub mod core;
 pub mod engine;
+pub mod error;
 pub mod http;
 pub mod models;
 pub mod utils;

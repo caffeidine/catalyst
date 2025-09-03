@@ -8,7 +8,7 @@ pub fn enable_debug() {
 
 pub fn debug_println(args: std::fmt::Arguments) {
     if DEBUG_ENABLED.load(Ordering::SeqCst) {
-        println!("[DEBUG] {}", args);
+        println!("[DEBUG] {args}");
     }
 }
 

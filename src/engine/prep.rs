@@ -60,8 +60,8 @@ fn build_headers(
     if let (Some(method), Some(token)) = (&suite.config.auth_method, &suite.config.auth_token) {
         let processed_token = replace_variables(token, vars);
         let auth_value = match method.to_lowercase().as_str() {
-            "bearer" => format!("Bearer {}", processed_token),
-            "basic" => format!("Basic {}", processed_token),
+            "bearer" => format!("Bearer {processed_token}"),
+            "basic" => format!("Basic {processed_token}"),
             _ => processed_token,
         };
         headers.push(("Authorization".to_string(), auth_value));
@@ -84,7 +84,7 @@ fn resolve_body(test: &Test, vars: &HashMap<String, String>, test_file_dir: &Pat
         match load_body_from_file(body_file, test_file_dir, vars) {
             Ok(content) => Some(content),
             Err(e) => {
-                eprintln!("Error loading body file '{}': {}", body_file, e);
+                eprintln!("Error loading body file '{body_file}': {e}");
                 None
             }
         }

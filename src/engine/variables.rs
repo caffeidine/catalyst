@@ -183,7 +183,7 @@ pub fn store_variables(
 fn extract_cookie_value(header: &str, name: &str) -> Option<String> {
     header
         .split(';')
-        .find(|s| s.trim().starts_with(&format!("{}=", name)))
+        .find(|s| s.trim().starts_with(&format!("{name}=")))
         .and_then(|cookie| cookie.split('=').nth(1))
         .map(|v| v.trim().to_string())
 }
