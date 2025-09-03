@@ -1,3 +1,4 @@
+use crate::models::command::CommandStep;
 use serde::Deserialize;
 use std::collections::HashMap;
 
@@ -32,4 +33,7 @@ pub struct Test {
     pub get_cookie: Option<HashMap<String, String>>,
 
     pub max_response_time: Option<u64>,
+
+    pub before: Option<Vec<CommandStep>>,
+    pub after: Option<Vec<CommandStep>>,
 }

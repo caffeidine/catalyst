@@ -57,6 +57,7 @@ pub enum Commands {
 
 impl Commands {
     /// Parse variables from the --var flag format (key1=value1,key2=value2)
+    #[must_use]
     pub fn parse_variables(var_string: Option<String>) -> HashMap<String, String> {
         let mut variables = HashMap::new();
 

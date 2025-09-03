@@ -3,6 +3,10 @@ use crate::checker::{list_tests, validate};
 use crate::core::runner::TestRunner;
 use crate::utils::debug;
 
+/// Run the CLI application
+/// 
+/// # Panics
+/// Will panic if the tokio runtime cannot be created
 pub fn run(opts: Opts) {
     match opts.command {
         Commands::Run {
@@ -27,9 +31,7 @@ pub fn run(opts: Opts) {
         }
         Commands::Validate { file, var } => {
             println!("Validating tests configuration...");
-            tokio::runtime::Runtime::new()
-                .unwrap()
-                .block_on(run_validate(file, var));
+            run_validate(file, var);
         }
         Commands::List { verbose, file } => {
             println!("Listing available tests...");
@@ -38,7 +40,7 @@ pub fn run(opts: Opts) {
     }
 }
 
-pub async fn run_validate(file: Option<String>, _var: Option<String>) {
+pub fn run_validate(file: Option<String>, _var: Option<String>) {
     // Note: Variables are not used in validation, only for actual test execution
     match file {
         Some(f) => validate(Some(&f)),

@@ -2,6 +2,7 @@ use crate::debug;
 use regex::Regex;
 use serde_json::Value;
 
+#[must_use]
 pub fn body_matches(expected: &Value, actual: &Value) -> bool {
     match expected {
         Value::Object(expected_obj) => {
@@ -40,6 +41,7 @@ pub fn body_matches(expected: &Value, actual: &Value) -> bool {
     }
 }
 
+#[must_use]
 pub fn validate_assertion(assertion: &crate::models::test::JsonAssertion, actual: &Value) -> bool {
     match assertion {
         crate::models::test::JsonAssertion::Exact(expected) => body_matches(expected, actual),
@@ -48,22 +50,20 @@ pub fn validate_assertion(assertion: &crate::models::test::JsonAssertion, actual
         }
         crate::models::test::JsonAssertion::Regex(pattern) => {
             let json_str = actual.to_string();
-            match Regex::new(pattern) {
-                Ok(regex) => regex.is_match(&json_str),
-                Err(_) => {
-                    println!("Invalid regex pattern: {}", pattern);
-                    false
-                }
+            if let Ok(regex) = Regex::new(pattern) {
+                regex.is_match(&json_str)
+            } else {
+                println!("Invalid regex pattern: {pattern}");
+                false
             }
         }
         crate::models::test::JsonAssertion::PathRegex(path, pattern) => {
             if let Some(value) = extract_json_value(actual, path) {
-                match Regex::new(pattern) {
-                    Ok(regex) => regex.is_match(&value),
-                    Err(_) => {
-                        println!("Invalid regex pattern: {}", pattern);
-                        false
-                    }
+                if let Ok(regex) = Regex::new(pattern) {
+                    regex.is_match(&value)
+                } else {
+                    println!("Invalid regex pattern: {pattern}");
+                    false
                 }
             } else {
                 false
@@ -72,21 +72,19 @@ pub fn validate_assertion(assertion: &crate::models::test::JsonAssertion, actual
     }
 }
 
+#[must_use]
 pub fn contains_json_value(expected: &Value, actual: &Value) -> bool {
     match (expected, actual) {
         (Value::Object(expected_obj), Value::Object(actual_obj)) => {
             for (key, expected_value) in expected_obj {
-                match actual_obj.get(key) {
-                    Some(actual_value) => {
-                        if !contains_json_value(expected_value, actual_value) {
-                            debug!("Object key '{}' value mismatch", key);
-                            return false;
-                        }
-                    }
-                    None => {
-                        debug!("Missing object key '{}'", key);
+                if let Some(actual_value) = actual_obj.get(key) {
+                    if !contains_json_value(expected_value, actual_value) {
+                        debug!("Object key '{}' value mismatch", key);
                         return false;
                     }
+                } else {
+                    debug!("Missing object key '{}'", key);
+                    return false;
                 }
             }
             true
@@ -118,6 +116,11 @@ pub fn contains_json_value(expected: &Value, actual: &Value) -> bool {
     }
 }
 
+/// Extract a value from JSON using a simplified `JSONPath`
+/// 
+/// # Panics
+/// May panic if the path contains invalid array indices
+#[must_use]
 pub fn extract_json_value(json: &Value, path: &str) -> Option<String> {
     let parts: Vec<&str> = path.trim_start_matches("$.").split('.').collect();
     let mut current = json;

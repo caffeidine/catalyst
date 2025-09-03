@@ -2,6 +2,10 @@ use crate::models::suite::TestSuite;
 use std::fs;
 use toml;
 
+/// Parse tests from a TOML file
+/// 
+/// # Errors
+/// Returns an error if the file cannot be read or parsed
 pub fn parse_tests(file_path: Option<&str>) -> Result<TestSuite, &'static str> {
     let path = file_path.unwrap_or(".catalyst/tests.toml");
     let content = fs::read_to_string(path).map_err(|_| "Failed to read tests file")?;
@@ -23,18 +27,18 @@ pub fn list_tests(verbose: bool, file_path: Option<&str>) {
                     println!("  Method: {}", test.method);
                     println!("  Endpoint: {}", test.endpoint);
                     if let Some(query_params) = &test.query_params {
-                        println!("  Query Params: {:?}", query_params);
+                        println!("  Query Params: {query_params:?}");
                     }
                     if let Some(headers) = &test.headers {
-                        println!("  Headers: {:?}", headers);
+                        println!("  Headers: {headers:?}");
                     }
                     if let Some(body) = &test.body {
-                        println!("  Body: {}", body);
+                        println!("  Body: {body}");
                     }
                     println!("  Expected Status: {}", test.expected_status);
                 }
             }
         }
-        Err(err) => println!("Failed to list tests: {}", err),
+        Err(err) => println!("Failed to list tests: {err}"),
     }
 }

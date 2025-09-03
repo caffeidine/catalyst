@@ -9,6 +9,7 @@ pub struct Config {
     pub default_headers: Option<HashMap<String, String>>,
     pub env: Option<EnvConfig>,
     pub insecure: Option<bool>,
+    pub allowed_commands: Option<Vec<String>>,
 }
 
 #[derive(Debug, Deserialize, Clone)]

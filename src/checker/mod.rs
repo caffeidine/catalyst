@@ -1,5 +1,5 @@
-mod parser;
-mod validator;
+pub mod parser;
+pub mod validator;
 
 pub use parser::{list_tests, parse_tests};
 pub use validator::validate;

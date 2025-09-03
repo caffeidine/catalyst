@@ -17,7 +17,7 @@ pub struct Request {
     pub body: Option<Value>,
 }
 
-pub fn build(test: &Test, suite: &TestSuite, vars: &HashMap<String, String>) -> Request {
+pub fn build(test: &Test, suite: &TestSuite, vars: &HashMap<String, String>, test_file_dir: &Path) -> Request {
     Request {
         url: format!(
             "{}{}",
@@ -30,7 +30,7 @@ pub fn build(test: &Test, suite: &TestSuite, vars: &HashMap<String, String>) -> 
                 .map(|(k, v)| (k.clone(), replace_variables(v, vars)))
                 .collect()
         }),
-        body: resolve_body(test, vars),
+        body: resolve_body(test, vars, test_file_dir),
     }
 }
 
@@ -74,14 +74,14 @@ fn build_headers(
     }
 }
 
-fn resolve_body(test: &Test, vars: &HashMap<String, String>) -> Option<Value> {
+fn resolve_body(test: &Test, vars: &HashMap<String, String>, test_file_dir: &Path) -> Option<Value> {
     if let Some(body) = &test.body {
         // Existing logic for inline body
         let body_str = serde_json::to_string(body).unwrap_or_default();
         Some(serde_json::from_str(&replace_variables(&body_str, vars)).unwrap_or(Value::Null))
     } else if let Some(body_file) = &test.body_file {
         // New: File-based body logic
-        match load_body_from_file(body_file, vars) {
+        match load_body_from_file(body_file, test_file_dir, vars) {
             Ok(content) => Some(content),
             Err(e) => {
                 eprintln!("Error loading body file '{}': {}", body_file, e);

@@ -33,6 +33,13 @@ pub fn replace_variables(input: &str, vars: &HashMap<String, String>) -> String 
         .into_owned()
 }
 
+/// Replace variables and file inclusions in input string
+/// 
+/// # Errors
+/// Returns an error if file loading fails
+/// 
+/// # Panics
+/// May panic if regex compilation fails
 pub fn replace_variables_with_files(
     input: &str,
     vars: &HashMap<String, String>,
@@ -45,7 +52,7 @@ pub fn replace_variables_with_files(
         match load_file_content(file_path, test_file_dir) {
             Ok(content) => content,
             Err(e) => {
-                eprintln!("Error loading file '{}': {}", file_path, e);
+                eprintln!("Error loading file '{file_path}': {e}");
                 caps[0].to_string()
             }
         }
@@ -62,20 +69,20 @@ fn load_file_content(file_path: &str, test_file_dir: &Path) -> Result<String, St
     let full_path = test_file_dir.join(file_path);
 
     if !full_path.exists() {
-        return Err(format!("File '{}' does not exist", file_path));
+        return Err(format!("File '{file_path}' does not exist"));
     }
 
     if !full_path.is_file() {
-        return Err(format!("'{}' is not a file", file_path));
+        return Err(format!("'{file_path}' is not a file"));
     }
 
     let content = fs::read_to_string(&full_path)
-        .map_err(|e| format!("Cannot read file '{}': {}", file_path, e))?;
+        .map_err(|e| format!("Cannot read file '{file_path}': {e}"))?;
 
     Ok(escape_json_string(&content))
 }
 
-pub fn escape_json_string(input: &str) -> String {
+#[must_use] pub fn escape_json_string(input: &str) -> String {
     input
         .replace('\\', "\\\\")
         .replace('"', "\\\"")

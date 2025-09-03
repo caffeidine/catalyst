@@ -3,7 +3,7 @@ use crate::debug;
 use crate::engine::variables::load_env_files;
 use crate::http::client::HttpClient;
 use crate::models::test::Test;
-use colored::*;
+use colored::Colorize;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::env;
@@ -27,6 +27,15 @@ pub struct TestResult {
     pub messages: Vec<String>,
 }
 
+struct TestExecutionContext<'a> {
+    test_suite: &'a crate::models::suite::TestSuite,
+    filter: Option<String>,
+    verbose: bool,
+    test_file_dir: &'a Path,
+    client: &'a HttpClient,
+    total: usize,
+}
+
 pub struct TestRunner {
     pub variables: HashMap<String, String>,
     pub results: Vec<TestResult>,
@@ -34,6 +43,7 @@ pub struct TestRunner {
 }
 
 impl TestRunner {
+    #[must_use]
     pub fn new(disable_color: bool) -> Self {
         TestRunner {
             variables: HashMap::new(),
@@ -66,6 +76,73 @@ impl TestRunner {
         }
     }
 
+    async fn execute_test_with_hooks(
+        &mut self,
+        test: &Test,
+        client: &HttpClient,
+        test_file_dir: &Path,
+        allowed_commands: Option<&[String]>,
+    ) -> TestResult {
+        let mut test_failed = false;
+        let mut error_messages = Vec::new();
+
+        // Execute before hooks
+        if let Some(before_steps) = &test.before
+            && let Err(e) = crate::engine::commands::execute_command_steps(
+                before_steps,
+                &mut self.variables,
+                test_file_dir,
+                allowed_commands,
+                "before",
+            ).await {
+            error_messages.push(format!("Before hook failed: {e}"));
+            test_failed = true;
+        }
+
+        // Execute the actual HTTP test (only if before hooks succeeded)
+        let mut result = if test_failed {
+            TestResult {
+                name: test.name.clone(),
+                success: false,
+                expected_status: test.expected_status,
+                actual_status: 0,
+                response_body: None,
+                headers: HashMap::new(),
+                messages: error_messages.clone(),
+            }
+        } else {
+            self.execute_test(test, client, test_file_dir).await
+        };
+
+        let http_test_success = result.success && !test_failed;
+
+        // Execute after hooks (always run, but respect 'on' condition)
+        if let Some(after_steps) = &test.after {
+            let filtered_steps: Vec<_> = after_steps.iter().filter(|step| {
+                match step.get_on_condition() {
+                    "success" => http_test_success,
+                    "failure" => !http_test_success,
+                    _ => true,
+                }
+            }).cloned().collect();
+
+            if !filtered_steps.is_empty()
+                && let Err(e) = crate::engine::commands::execute_command_steps(
+                    &filtered_steps,
+                    &mut self.variables,
+                    test_file_dir,
+                    allowed_commands,
+                    "after",
+                ).await {
+                result.messages.push(format!("After hook failed: {e}"));
+                // Note: after hook failures don't change the test result success status
+            }
+        }
+
+        result.messages.extend(error_messages);
+        result
+    }
+
     pub async fn execute_tests(
         &mut self,
         filter: Option<String>,
@@ -95,21 +172,62 @@ impl TestRunner {
         let mut skipped = 0;
         let total = test_suite.tests.len();
 
-        for test in test_suite.tests.iter() {
-            if let Some(ref f) = filter {
-                if !test.name.contains(f) {
-                    skipped += 1;
-                    if verbose {
-                        println!("{} {}", "SKIP".yellow(), test.name);
-                    }
-                    continue;
+        // Execute suite setup hooks
+        if let Some(setup_steps) = &test_suite.setup
+            && let Err(e) = crate::engine::commands::execute_command_steps(
+                setup_steps,
+                &mut self.variables,
+                test_file_dir,
+                test_suite.config.allowed_commands.as_deref(),
+                "setup",
+            ).await {
+            eprintln!("{}", format!("Setup failed: {e}").red());
+            return;
+        }
+
+        // Execute tests with defer for teardown
+        let context = TestExecutionContext {
+            test_suite: &test_suite,
+            filter,
+            verbose,
+            test_file_dir,
+            client: &client,
+            total,
+        };
+        self.execute_tests_with_hooks(context, &mut skipped).await;
+
+        // Execute suite teardown hooks (always runs)
+        if let Some(teardown_steps) = &test_suite.teardown
+            && let Err(e) = crate::engine::commands::execute_command_steps(
+                teardown_steps,
+                &mut self.variables,
+                test_file_dir,
+                test_suite.config.allowed_commands.as_deref(),
+                "teardown",
+            ).await {
+            eprintln!("{}", format!("Teardown failed: {e}").red());
+        }
+    }
+
+    async fn execute_tests_with_hooks(
+        &mut self,
+        context: TestExecutionContext<'_>,
+        skipped: &mut usize,
+    ) {
+        for test in &context.test_suite.tests {
+            if let Some(ref f) = context.filter
+                && !test.name.contains(f) {
+                *skipped += 1;
+                if context.verbose {
+                    println!("{} {}", "SKIP".yellow(), test.name);
                 }
+                continue;
             }
 
-            let result = self.execute_test(test, &client, test_file_dir).await;
+            let result = self.execute_test_with_hooks(test, context.client, context.test_file_dir, context.test_suite.config.allowed_commands.as_deref()).await;
             let status_matches = result.expected_status == result.actual_status;
 
-            if verbose {
+            if context.verbose {
                 println!("\n{}", "━".repeat(get_terminal_width()).blue());
                 println!("Test: {}", test.name.bold());
                 println!(
@@ -182,17 +300,17 @@ impl TestRunner {
                     "{} {} {}",
                     status_indicator,
                     test.name,
-                    if !status_matches {
+                    if status_matches {
                         format!(
                             "(expected {}, got {})",
                             result.expected_status,
-                            result.actual_status.to_string().red()
+                            result.actual_status.to_string().green()
                         )
                     } else {
                         format!(
                             "(expected {}, got {})",
                             result.expected_status,
-                            result.actual_status.to_string().green()
+                            result.actual_status.to_string().red()
                         )
                     }
                 );
@@ -200,10 +318,8 @@ impl TestRunner {
                 if !result.success {
                     if let (Some(expected_body), Some(actual_body)) =
                         (&test.expected_body, &result.response_body)
-                    {
-                        if expected_body != actual_body {
-                            println!("  {}", "Body mismatch".red());
-                        }
+                        && expected_body != actual_body {
+                        println!("  {}", "Body mismatch".red());
                     }
                     for msg in &result.messages {
                         println!("  {} {}", "-".bold(), msg.red());
@@ -223,6 +339,10 @@ impl TestRunner {
             self.results.push(result);
         }
 
+        self.display_summary(*skipped, context.total);
+    }
+
+    fn display_summary(&self, skipped: usize, total: usize) {
         if !self.disable_color {
             println!("\n{}", "━".repeat(get_terminal_width()).blue());
             let success_count = self.results.iter().filter(|r| r.success).count();

@@ -20,30 +20,27 @@ pub fn check(
 
     if status != test.expected_status {
         errors.push(format!(
-            "Status {}, expected {}",
-            status, test.expected_status
+            "Status {status}, expected {}",
+            test.expected_status
         ));
     }
 
-    if let Some(max) = test.max_response_time {
-        if time_ms > max {
-            errors.push(format!("Time {}ms > {}ms", time_ms, max));
-        }
+    if let Some(max) = test.max_response_time && time_ms > max {
+        errors.push(format!("Time {time_ms}ms > {max}ms"));
     }
 
-    if let Some(expected) = &test.expected_body {
-        if !super::assertions::body_matches(
+    if let Some(expected) = &test.expected_body
+        && !super::assertions::body_matches(
             &super::variables::replace_variables_in_json(expected, vars),
             body,
         ) {
-            errors.push("Body mismatch".into());
-        }
+        errors.push("Body mismatch".into());
     }
 
     if let Some(assertions) = &test.assertions {
         for assertion in assertions {
             if !super::assertions::validate_assertion(&process_assertion(assertion, vars), body) {
-                errors.push(format!("Failed: {:?}", assertion));
+                errors.push(format!("Failed: {assertion:?}"));
             }
         }
     }
@@ -76,7 +73,7 @@ fn process_assertion(assertion: &JsonAssertion, vars: &HashMap<String, String>) 
 fn replace_vars(s: &str, vars: &HashMap<String, String>) -> String {
     let mut result = s.to_string();
     for (k, v) in vars {
-        result = result.replace(&format!("{{{{{}}}}}", k), v);
+        result = result.replace(&format!("{{{{{k}}}}}"), v);
     }
     result
 }

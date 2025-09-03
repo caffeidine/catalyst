@@ -10,6 +10,8 @@ mod tests {
             auth_token: None,
             default_headers: None,
             env: None,
+            insecure: None,
+            allowed_commands: None,
         }
     }
 
