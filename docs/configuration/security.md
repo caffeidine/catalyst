@@ -8,15 +8,6 @@ Catalyst supports several authentication methods that can be configured in the g
 
 ### Cookie-based Authentication
 
-For cookie-based authentication, you can use the `auth_method` set to "Cookie":
-
-```toml
-[config]
-base_url = "https://api.example.com"
-auth_method = "Cookie"
-default_headers = { "Content-Type" = "application/json" }
-```
-
 The typical workflow for cookie-based authentication is:
 
 1. Perform a login request
@@ -44,16 +35,18 @@ expected_status = 200
 
 ### Bearer Token Authentication
 
-To use Bearer token authentication:
+Add an Authorization header via `default_headers` (global) or per-test `headers`:
 
 ```toml
 [config]
 base_url = "https://api.example.com"
-auth_method = "Bearer"
-auth_token = "your-jwt-token"
+default_headers = { 
+  "Content-Type" = "application/json",
+  "Authorization" = "Bearer {{API_TOKEN}}" 
+}
 ```
 
-This will add an `Authorization: Bearer your-jwt-token` header to all requests.
+You can pass `API_TOKEN` via `--var API_TOKEN=...` or use an environment variable with `${{API_TOKEN}}` in values.
 
 ## Handling API Keys
 
@@ -100,5 +93,5 @@ expected_status = 200
 
 For more information about test configuration and advanced features, see:
 
-- [Test File Structure](./test_file_structure.md) - Details on the overall structure of test files
-- [Complete Reference](../reference/references.md) - Comprehensive reference with examples for all features, including advanced assertions and response time validation
+- [Schema Reference](../reference/schema.md)
+- [Test Reference Index](../reference/references.md)

@@ -37,4 +37,4 @@ You should see output showing the version number of Catalyst.
 
 ## Next Steps
 
-Now that you have Catalyst installed, you can proceed to the [Getting Started](./getting_started.md) section to learn how to create and run your first API tests.
+Now that you have Catalyst installed, start with the [Quickstart](./tutorials/quickstart.md) or jump into [Your First Test](./getting-started/first_test.md).

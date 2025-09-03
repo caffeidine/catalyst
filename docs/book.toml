@@ -1,6 +1,0 @@
-[book]
-authors = ["Lucas Jahier"]
-language = "en"
-multilingual = false
-src = "src"
-title = "Catalyst a lightweight API testing tool"

@@ -44,6 +44,14 @@ catalyst run --verbose
 
 This will show additional information such as response bodies and headers.
 
+### Debug Logs
+
+To print detailed internal logs (variable substitution, hooks, env loading), use `--debug`:
+
+```bash
+catalyst run --debug
+```
+
 ### Disabling Colored Output
 
 If you're running tests in an environment that doesn't support colored output, you can disable it:
@@ -130,4 +138,4 @@ Total: 3, Passed: 2, Failed: 1
 
 ## Next Steps
 
-Now that you know how to run tests, you can explore more configuration options in the [Configuration](../configuration.md) section.
+Now that you know how to run tests, explore the [Schema Reference](../reference/schema.md) for all available options.
