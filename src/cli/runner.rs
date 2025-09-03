@@ -16,6 +16,7 @@ pub fn run(opts: Opts) {
             file,
             debug: debug_enabled,
             var,
+            no_fail_summary,
         } => {
             if debug_enabled {
                 debug::enable_debug();
@@ -27,6 +28,7 @@ pub fn run(opts: Opts) {
                 disable_color,
                 file,
                 var,
+                no_fail_summary,
             ));
         }
         Commands::Validate { file, var } => {
@@ -54,7 +56,8 @@ pub async fn run_tests(
     disable_color: bool,
     file: Option<String>,
     var: Option<String>,
+    no_fail_summary: bool,
 ) {
     let mut runner = TestRunner::new(disable_color);
-    runner.execute_tests(filter, verbose, file, var).await;
+    runner.execute_tests(filter, verbose, file, var, no_fail_summary).await;
 }

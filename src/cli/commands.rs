@@ -33,6 +33,9 @@ pub enum Commands {
             help = "Set variables in key=value format (comma-separated: key1=val1,key2=val2)"
         )]
         var: Option<String>,
+
+        #[arg(long, default_value = "false", help = "Disable failure summary display")]
+        no_fail_summary: bool,
     },
 
     Validate {
