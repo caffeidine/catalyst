@@ -3,6 +3,7 @@ use crate::debug;
 use crate::engine::variables::load_env_files;
 use crate::http::client::HttpClient;
 use crate::models::test::Test;
+use crate::output::TestSummaryFormatter;
 use colored::Colorize;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -361,146 +362,22 @@ impl TestRunner {
             return;
         }
         
-        if !self.disable_color {
-            println!("\n{}", "━".repeat(get_terminal_width()).blue());
-            println!("\nResults:");
-            
-            for result in &self.results {
-                let status_indicator = if result.success {
-                    "✓".green()
-                } else {
-                    "✗".red()
-                };
-                
-                if result.success {
-                    println!("  {} {}", status_indicator, result.name);
-                } else {
-                    println!("  {} {} (expected {}, got {})", 
-                        status_indicator, 
-                        result.name,
-                        result.expected_status,
-                        result.actual_status.to_string().red()
-                    );
-                }
-            }
-            
-            println!();
-            let success_count = self.results.iter().filter(|r| r.success).count();
-            let fail_count = self.results.len() - success_count;
-
-            if success_count > 0 {
-                print!("{} passed", format!("{success_count} tests").green());
-            }
-            if fail_count > 0 {
-                if success_count > 0 {
-                    print!(", ");
-                }
-                print!("{} failed", format!("{fail_count} tests").red());
-            }
-            if skipped > 0 {
-                if success_count > 0 || fail_count > 0 {
-                    print!(", ");
-                }
-                print!("{} skipped", format!("{skipped} tests").yellow());
-            }
-            println!(" (total: {total})");
-        } else {
-            println!("\nResults:");
-            for result in &self.results {
-                if result.success {
-                    println!("  ✓ {}", result.name);
-                } else {
-                    println!("  ✗ {} (expected {}, got {})", 
-                        result.name, result.expected_status, result.actual_status);
-                }
-            }
-            
-            let success_count = self.results.iter().filter(|r| r.success).count();
-            let fail_count = self.results.len() - success_count;
-            
-            print!("\n{success_count} tests passed");
-            if fail_count > 0 {
-                print!(", {fail_count} tests failed");
-            }
-            if skipped > 0 {
-                print!(", {skipped} tests skipped");
-            }
-            println!(" (total: {total})");
-        }
+        let formatter = TestSummaryFormatter::new(self.disable_color);
+        let output = formatter.format_compact_results(&self.results, skipped, total);
+        print!("{output}");
     }
 
     fn display_failure_details(&self) {
-        let failed_results: Vec<_> = self.results.iter().filter(|r| !r.success).collect();
-        
-        if failed_results.is_empty() {
-            return;
-        }
-        
-        if !self.disable_color {
-            println!("\n{}", "━".repeat(get_terminal_width()).blue());
-            println!("\n{}", "Failures:".red().bold());
-        } else {
-            println!("\nFailures:");
-        }
-        
-        for (i, result) in failed_results.iter().enumerate() {
-            if i > 0 {
-                println!();
-            }
-            
-            if !self.disable_color {
-                println!("---");
-                println!("Test: {}", result.name.bold());
-                println!("Endpoint: {} {}", 
-                    result.method.yellow(), 
-                    result.endpoint.yellow()
-                );
-                println!("Status: {} (expected {})", 
-                    result.actual_status.to_string().red(),
-                    result.expected_status.to_string().bold()
-                );
-            } else {
-                println!("---");
-                println!("Test: {}", result.name);
-                println!("Endpoint: {} {}", result.method, result.endpoint);
-                println!("Status: {} (expected {})", result.actual_status, result.expected_status);
-            }
-            
-            if !result.messages.is_empty() {
-                println!("Messages:");
-                for msg in &result.messages {
-                    if !self.disable_color {
-                        println!("  - {}", msg.red());
-                    } else {
-                        println!("  - {msg}");
-                    }
-                }
-            }
-            
-            if let Some(body) = &result.response_body {
-                println!("Response Body:");
-                let body_str = self.format_response_body(body);
-                println!("{body_str}");
-            } else {
-                println!("Response Body: <none>");
-            }
-        }
+        let formatter = TestSummaryFormatter::new(self.disable_color);
+        let output = formatter.format_failure_details(&self.results);
+        print!("{output}");
     }
     
     pub const MAX_SUMMARY_BODY_BYTES: usize = 8192;
     
+    #[must_use]
     pub fn format_response_body(&self, body: &Value) -> String {
-        let formatted = if body.is_object() || body.is_array() {
-            serde_json::to_string_pretty(body).unwrap_or_else(|_| body.to_string())
-        } else {
-            body.to_string()
-        };
-        
-        if formatted.len() > Self::MAX_SUMMARY_BODY_BYTES {
-            let truncated = &formatted[..Self::MAX_SUMMARY_BODY_BYTES];
-            format!("{truncated}\n... (truncated)")
-        } else {
-            formatted
-        }
+        let formatter = TestSummaryFormatter::new(self.disable_color);
+        formatter.format_response_body(body)
     }
 }

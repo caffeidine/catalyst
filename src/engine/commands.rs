@@ -1,12 +1,6 @@
-use crate::utils::string::replace_variables;
 use crate::models::command::CommandStep;
 use std::collections::HashMap;
 use std::path::Path;
-use std::process::Stdio;
-use std::time::Duration;
-use tokio::io::{AsyncReadExt, BufReader};
-use tokio::process::Command;
-use tokio::time::timeout;
 
 #[derive(Debug)]
 pub struct CommandResult {
@@ -55,173 +49,8 @@ pub async fn execute_command_step(
     work_dir: &Path,
     allowed_commands: Option<&[String]>,
 ) -> Result<CommandResult, CommandError> {
-    // Check conditional execution
-    if let Some(when_condition) = &step.when {
-        let condition = replace_variables(when_condition, variables);
-        if !evaluate_condition(&condition) {
-            return Ok(CommandResult {
-                success: true,
-                stdout: String::new(),
-                stderr: String::new(),
-                exit_code: Some(0),
-                captured_vars: HashMap::new(),
-            });
-        }
-    }
-
-    // Validate allowed commands
-    if let Some(allowed) = allowed_commands {
-        let command_to_check = if step.should_use_shell() {
-            step.args
-                .as_ref()
-                .and_then(|args| args.get(1))
-                .unwrap_or(&step.run)
-        } else {
-            &step.run
-        };
-        
-        let command_name = command_to_check.split_whitespace().next().unwrap_or(command_to_check);
-        if !allowed.contains(&command_name.to_string()) {
-            return Err(CommandError::Validation(format!(
-                "Command '{command_name}' is not in allowed_commands list"
-            )));
-        }
-    }
-
-    // Substitute variables in command components
-    let run_cmd = replace_variables(&step.run, variables);
-    let args = step
-        .args
-        .as_ref()
-        .map(|a| a.iter().map(|arg| replace_variables(arg, variables)).collect::<Vec<_>>());
-
-    // Prepare working directory
-    let dir_path = step.dir.as_ref().map(|dir| replace_variables(dir, variables));
-    let exec_dir = dir_path.as_deref().map_or(work_dir, Path::new);
-
-    // Build command
-    let mut cmd = if step.should_use_shell() {
-        let mut shell_cmd = if cfg!(unix) {
-            let mut c = Command::new("sh");
-            c.arg("-lc");
-            c
-        } else {
-            let mut c = Command::new("cmd");
-            c.arg("/C");
-            c
-        };
-        
-        if let Some(args) = &args {
-            shell_cmd.args(args);
-        } else {
-            shell_cmd.arg(&run_cmd);
-        }
-        shell_cmd
-    } else {
-        let mut direct_cmd = Command::new(&run_cmd);
-        if let Some(args) = &args {
-            direct_cmd.args(args);
-        }
-        direct_cmd
-    };
-
-    cmd.current_dir(exec_dir);
-    cmd.stdout(Stdio::piped());
-    cmd.stderr(Stdio::piped());
-
-    // Set environment variables
-    if let Some(env_vars) = &step.env {
-        for (key, value) in env_vars {
-            let substituted_value = replace_variables(value, variables);
-            // Redact sensitive environment variables in debug output
-            if key.to_lowercase().contains("token") 
-                || key.to_lowercase().contains("password") 
-                || key.to_lowercase().contains("secret") 
-                || key.to_lowercase().contains("key") {
-                crate::debug!("Setting env var {}: [REDACTED]", key);
-            } else {
-                crate::debug!("Setting env var {}: {}", key, substituted_value);
-            }
-            cmd.env(key, substituted_value);
-        }
-    }
-
-    // Execute with timeout
-    let timeout_duration = Duration::from_millis(step.get_timeout_ms());
-    
-    let child_result = timeout(timeout_duration, async {
-        let mut child = cmd.spawn().map_err(|e| {
-            CommandError::ExecutionFailed(format!("Failed to spawn process: {e}"))
-        })?;
-
-        let stdout = child.stdout.take().unwrap();
-        let stderr = child.stderr.take().unwrap();
-
-        let mut stdout_reader = BufReader::new(stdout);
-        let mut stderr_reader = BufReader::new(stderr);
-
-        let mut stdout_content = String::new();
-        let mut stderr_content = String::new();
-
-        let read_stdout = stdout_reader.read_to_string(&mut stdout_content);
-        let read_stderr = stderr_reader.read_to_string(&mut stderr_content);
-        let wait_child = child.wait();
-
-        let (stdout_res, stderr_res, exit_status) = tokio::join!(read_stdout, read_stderr, wait_child);
-
-        stdout_res.map_err(|e| CommandError::ExecutionFailed(format!("Failed to read stdout: {e}")))?;
-        stderr_res.map_err(|e| CommandError::ExecutionFailed(format!("Failed to read stderr: {e}")))?;
-        let status = exit_status.map_err(|e| CommandError::ExecutionFailed(format!("Failed to wait for process: {e}")))?;
-
-        Ok::<_, CommandError>((stdout_content, stderr_content, status.code()))
-    }).await;
-
-    let (stdout, stderr, exit_code) = match child_result {
-        Ok(result) => result?,
-        Err(_) => return Err(CommandError::Timeout),
-    };
-
-    let success = exit_code.unwrap_or(-1) == 0;
-    let mut captured_vars = HashMap::new();
-
-    // Handle capture
-    if let Some(capture) = &step.capture {
-        captured_vars.insert(capture.var.clone(), stdout.clone());
-        captured_vars.insert(format!("{}_stderr", capture.var), stderr.clone());
-    }
-
-    // Handle export (JSON parsing)
-    if let Some(exports) = &step.export
-        && !stdout.trim().is_empty() {
-        match serde_json::from_str::<serde_json::Value>(&stdout) {
-            Ok(json_value) => {
-                for (var_name, json_path) in exports {
-                    if let Some(extracted) = extract_json_path(&json_value, json_path) {
-                        captured_vars.insert(var_name.clone(), extracted);
-                    }
-                }
-            }
-            Err(e) if !step.should_ignore_error() => {
-                return Err(CommandError::JsonParsingFailed(format!(
-                    "Failed to parse stdout as JSON: {e}"
-                )));
-            }
-            _ => {} // Ignore JSON parsing errors if ignore_error is true
-        }
-    }
-
-    // Update variables with captured values
-    for (key, value) in &captured_vars {
-        variables.insert(key.clone(), value.clone());
-    }
-
-    Ok(CommandResult {
-        success,
-        stdout,
-        stderr,
-        exit_code,
-        captured_vars,
-    })
+    let executor = super::executor::CommandExecutor::new(step, variables, work_dir, allowed_commands);
+    executor.execute().await
 }
 
 #[must_use]
@@ -242,7 +71,8 @@ pub fn evaluate_condition(condition: &str) -> bool {
     !condition.trim().is_empty() && condition.trim() != "false"
 }
 
-fn extract_json_path(json: &serde_json::Value, path: &str) -> Option<String> {
+#[must_use]
+pub fn extract_json_path(json: &serde_json::Value, path: &str) -> Option<String> {
     crate::utils::json_path::extract_json_path(json, path)
 }
 

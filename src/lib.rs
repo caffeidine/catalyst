@@ -27,6 +27,7 @@ pub mod engine;
 pub mod error;
 pub mod http;
 pub mod models;
+pub mod output;
 pub mod utils;
 
 // Re-export commonly used items
