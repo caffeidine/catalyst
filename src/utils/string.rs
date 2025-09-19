@@ -16,21 +16,30 @@ fn var_pattern() -> &'static Regex {
 pub fn replace_variables(input: &str, vars: &HashMap<String, String>) -> String {
     let with_env = env_pattern().replace_all(input, |caps: &regex::Captures| {
         let var_name = &caps[1];
-        let value = std::env::var(var_name).unwrap_or_else(|_| caps[0].to_string());
-        debug!("ENV var replace: {} => {}", var_name, value);
+        let (key, _) = split_variable_key(var_name);
+        let value = std::env::var(key).unwrap_or_else(|_| caps[0].to_string());
+        debug!("ENV var replace: {} => {}", key, value);
         value
     });
 
     var_pattern()
         .replace_all(&with_env, |caps: &regex::Captures| {
             let var_name = &caps[1];
+            let (key, _) = split_variable_key(var_name);
             let value = vars
-                .get(var_name)
+                .get(key)
                 .map_or_else(|| caps[0].to_string(), |v| v.to_string());
-            debug!("VAR replace: {} => {}", var_name, value);
+            debug!("VAR replace: {} => {}", key, value);
             value
         })
         .into_owned()
+}
+
+fn split_variable_key(raw: &str) -> (&str, Option<&str>) {
+    let mut parts = raw.splitn(2, '|');
+    let key = parts.next().map(str::trim).unwrap_or(raw).trim();
+    let cast = parts.next().map(str::trim);
+    (key, cast)
 }
 
 /// Replace variables and file inclusions in input string
