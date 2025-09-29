@@ -2,6 +2,7 @@ use crate::debug;
 use crate::utils::string::{replace_variables, replace_variables_with_files};
 use dotenv::dotenv;
 use serde_json::Value;
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::path::Path;
 
@@ -19,7 +20,7 @@ pub fn load_env_files() {
 
 pub fn replace_variables_in_json(json: &Value, vars: &HashMap<String, String>) -> Value {
     match json {
-        Value::String(s) => Value::String(replace_variables(s, vars)),
+        Value::String(s) => resolve_string_value(s, replace_variables(s, vars), vars),
         Value::Object(map) => Value::Object(
             map.iter()
                 .map(|(k, v)| (k.clone(), replace_variables_in_json(v, vars)))
@@ -42,7 +43,7 @@ pub fn replace_variables_in_json_with_files(
     match json {
         Value::String(s) => {
             let result = replace_variables_with_files(s, vars, test_file_dir)?;
-            Ok(Value::String(result))
+            Ok(resolve_string_value(s, result, vars))
         }
         Value::Object(map) => {
             let mut new_map = serde_json::Map::new();
@@ -61,6 +62,134 @@ pub fn replace_variables_in_json_with_files(
             Ok(Value::Array(new_arr))
         }
         _ => Ok(json.clone()),
+    }
+}
+
+enum PlaceholderSource {
+    Variable,
+    Env,
+}
+
+struct PlaceholderSpec {
+    name: String,
+    cast: Option<String>,
+    source: PlaceholderSource,
+}
+
+fn resolve_string_value(
+    original: &str,
+    replaced: String,
+    vars: &HashMap<String, String>,
+) -> Value {
+    if let Some(placeholder) = parse_placeholder(original) {
+        let PlaceholderSpec { name, cast, source } = placeholder;
+
+        let raw_value: Option<Cow<'_, str>> = match source {
+            PlaceholderSource::Variable => {
+                vars.get(&name).map(|value| Cow::Borrowed(value.as_str()))
+            }
+            PlaceholderSource::Env => std::env::var(&name).ok().map(Cow::Owned),
+        };
+
+        if let Some(raw) = raw_value {
+            if let Some(value) = value_from_raw(raw.as_ref(), cast.as_deref()) {
+                return value;
+            }
+        }
+    }
+
+    Value::String(replaced)
+}
+
+fn parse_placeholder(input: &str) -> Option<PlaceholderSpec> {
+    let trimmed = input.trim();
+
+    if let Some(spec) = parse_placeholder_with_prefix(trimmed, "{{", PlaceholderSource::Variable) {
+        return Some(spec);
+    }
+
+    if let Some(spec) = parse_placeholder_with_prefix(trimmed, "${{", PlaceholderSource::Env) {
+        return Some(spec);
+    }
+
+    None
+}
+
+fn parse_placeholder_with_prefix(
+    trimmed: &str,
+    prefix: &str,
+    source: PlaceholderSource,
+) -> Option<PlaceholderSpec> {
+    if !trimmed.starts_with(prefix) || !trimmed.ends_with("}}") {
+        return None;
+    }
+
+    let start = prefix.len();
+
+    if trimmed.len() <= start + 2 {
+        return None;
+    }
+
+    let inner = &trimmed[start..trimmed.len() - 2];
+    let inner = inner.trim();
+
+    if inner.is_empty() || inner.contains("{{") || inner.contains("}}") {
+        return None;
+    }
+
+    let mut parts = inner.splitn(2, '|');
+    let name = parts.next()?.trim();
+
+    if name.is_empty() {
+        return None;
+    }
+
+    let cast = parts
+        .next()
+        .map(|c| c.trim().to_string())
+        .filter(|c| !c.is_empty());
+
+    Some(PlaceholderSpec {
+        name: name.to_string(),
+        cast,
+        source,
+    })
+}
+
+fn value_from_raw(raw: &str, cast: Option<&str>) -> Option<Value> {
+    match cast.map(|c| c.to_ascii_lowercase()) {
+        Some(cast) => match cast.as_str() {
+            "int" | "integer" => raw.trim().parse::<i64>().ok().map(|n| Value::Number(n.into())),
+            "float" | "double" | "number" => raw
+                .trim()
+                .parse::<f64>()
+                .ok()
+                .and_then(|n| serde_json::Number::from_f64(n))
+                .map(Value::Number),
+            "bool" | "boolean" => match raw.trim().to_ascii_lowercase().as_str() {
+                "true" => Some(Value::Bool(true)),
+                "false" => Some(Value::Bool(false)),
+                _ => None,
+            },
+            "string" | "str" => Some(Value::String(raw.to_string())),
+            "json" => serde_json::from_str::<Value>(raw).ok(),
+            "array" | "list" => serde_json::from_str::<Value>(raw)
+                .ok()
+                .and_then(|value| value.as_array().cloned().map(Value::Array)),
+            "object" | "map" => serde_json::from_str::<Value>(raw)
+                .ok()
+                .and_then(|value| value.as_object().cloned().map(Value::Object)),
+            "null" => Some(Value::Null),
+            _ => None,
+        },
+        None => {
+            let candidate = raw.trim();
+            if candidate.is_empty() {
+                return None;
+            }
+
+            serde_json::from_str::<Value>(candidate).ok()
+        }
     }
 }
 
